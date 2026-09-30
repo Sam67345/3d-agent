@@ -6,8 +6,8 @@
 
 import os
 
-# WebView2 黑屏的常见解法：关闭 GPU 硬件合成（必须在启动 webview 前设置）
-os.environ.setdefault("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS", "--disable-gpu")
+# 注意：不要加 --disable-gpu（曾因黑屏误报加入），否则 plotly 3D 的 WebGL
+# 会被强制软件渲染，点数多时在桌面窗口里明显卡顿。
 
 import webview
 
