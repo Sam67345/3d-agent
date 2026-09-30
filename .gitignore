@@ -10,3 +10,5 @@ __pycache__/
 *.tar.gz
 .env
 求职项目/
+.workbuddy/
+screenshots/
