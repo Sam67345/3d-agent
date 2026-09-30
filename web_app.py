@@ -73,16 +73,59 @@ def _find_view3d_path():
     return None
 
 
-def _view3d_iframe():
-    """把 view_3d.html 包进 iframe（gr.HTML 直接注入的 <script> 不会执行，
+PLACEHOLDER = (
+    '<div style="color:#888;padding:24px;text-align:center;">'
+    '还没有 3D 图。执行「画 3D 图」，或从上方下拉框选择历史生成的 HTML</div>'
+)
+
+
+def _scan_html_files():
+    """扫描 output/ 及其一级子目录（run_* 等）下的 .html，按修改时间倒序。
+
+    返回 [(相对 output/ 的路径, 修改时间戳)]，供下拉框展示。
+    """
+    if not OUTPUT_DIR.exists():
+        return []
+    files = list(OUTPUT_DIR.glob("*.html"))
+    files += [p for sub in OUTPUT_DIR.iterdir() if sub.is_dir()
+              for p in sub.glob("*.html")]
+    scored = []
+    for p in files:
+        try:
+            scored.append((p.relative_to(OUTPUT_DIR).as_posix(), p.stat().st_mtime))
+        except OSError:
+            continue
+    scored.sort(key=lambda x: x[1], reverse=True)
+    return scored
+
+
+def _label_with_count(n):
+    return f"历史 3D 图（output/ 及其一级子目录，共 {n} 个）"
+
+
+def _dropdown_update(newest=None):
+    """重新扫描清单，返回 gr.update（默认选中最新，或指定项）。"""
+    files = _scan_html_files()
+    choices = [name for name, _ in files]
+    update = {"label": _label_with_count(len(choices))}
+    if not choices:
+        return gr.update(choices=[], value=None, **update)
+    value = newest if newest in choices else choices[0]
+    return gr.update(choices=choices, value=value, **update)
+
+
+def _iframe_for(rel_path):
+    """把选中的 html 文件包进 iframe（gr.HTML 直接注入的 <script> 不会执行，
     iframe 加载完整 HTML 文件则 plotly 可正常渲染与旋转）。"""
-    p = _find_view3d_path()
-    if p is None:
-        return gr.update()
-    rel = p.relative_to(ROOT).as_posix()
+    if not rel_path:
+        return PLACEHOLDER
+    full = OUTPUT_DIR / rel_path
+    if not full.exists():
+        return PLACEHOLDER
+    rel = full.relative_to(ROOT).as_posix()
     return (
         # gradio 6 的静态文件路由为 /gradio_api/file=（旧版为 /file=）
-        f'<iframe src="/gradio_api/file={rel}" style="width:100%;height:780px;'
+        f'<iframe src="/gradio_api/file={rel}" style="width:100%;height:720px;'
         'border:1px solid #ddd;border-radius:8px;background:#fff;"'
         ' title="3D 视图"></iframe>'
     )
@@ -90,22 +133,25 @@ def _view3d_iframe():
 
 # ---------- 聊天回调：生成器逐步推送，避免界面卡死 ----------
 
-def respond(user_text, history):
+def respond(user_text, history, current_pick):
     """处理一条指令。先推"执行中…"，结束后推真实回复与 3D 视图。"""
     user_text = (user_text or "").strip()
     if not user_text:
-        yield history, gr.update()
+        yield history, gr.update(), gr.update()
         return
+
+    _before = _scan_html_files()
+    before_top = _before[0][0] if _before else None
 
     history = list(history or [])
     history.append({"role": "user", "content": user_text})
     history.append({"role": "assistant", "content": "⏳ 执行中…"})
-    yield history, gr.update()
+    yield history, gr.update(), gr.update()
 
     if _agent is None:
         history[-1] = {"role": "assistant",
                        "content": f"❌ {_agent_error or 'Agent 不可用'}"}
-        yield history, gr.update()
+        yield history, gr.update(), gr.update()
         return
 
     try:
@@ -116,11 +162,20 @@ def respond(user_text, history):
     icon = "✅" if ok else "❌"
     history[-1] = {"role": "assistant", "content": f"{icon} {message}"}
 
-    view_html = _view3d_iframe() if ok else None
-    if view_html is not None:
-        yield history, view_html
+    # 只有本次真的产出了新图才切过去；否则保留用户当前选中的历史图
+    _after = _scan_html_files()
+    choices = [name for name, _ in _after]
+    top = choices[0] if choices else None
+    label = _label_with_count(len(choices))
+    if top is not None and top != before_top:
+        yield history, _iframe_for(top), gr.update(choices=choices, value=top,
+                                                   label=label)
+    elif choices:
+        keep = current_pick if current_pick in choices else top
+        yield history, gr.update(), gr.update(choices=choices, value=keep,
+                                              label=label)
     else:
-        yield history, gr.update()
+        yield history, gr.update(), gr.update(choices=[], value=None, label=label)
 
 
 # ---------- 界面 ----------
@@ -138,15 +193,31 @@ def build_app():
                         label="输入", scale=4, autofocus=True)
                     send_btn = gr.Button("发送", variant="primary", scale=1)
             with gr.Column(scale=1):
+                _initial = _scan_html_files()
+                _choices = [name for name, _ in _initial]
+                picker = gr.Dropdown(
+                    choices=_choices,
+                    value=_choices[0] if _choices else None,
+                    label=_label_with_count(len(_choices)),
+                    allow_custom_value=False,
+                    interactive=True,
+                )
+                with gr.Row():
+                    refresh_btn = gr.Button("刷新列表", scale=1, size="sm")
+                    hint = gr.Markdown(
+                        "选中即可查看；每次对话生成新图后列表会自动刷新并把新图排在最前",
+                        scale=4)
                 view = gr.HTML(
-                    value='<div style="color:#888;padding:24px;text-align:center;">'
-                          '执行「画 3D 图」后，这里会显示可旋转的 3D 散点图</div>',
+                    value=_iframe_for(_choices[0] if _choices else None),
                     label="3D 视图")
 
-        inputs = [txt, chatbot]
-        outputs = [chatbot, view]
+        inputs = [txt, chatbot, picker]
+        outputs = [chatbot, view, picker]
         send_btn.click(respond, inputs=inputs, outputs=outputs)
         txt.submit(respond, inputs=inputs, outputs=outputs)
+        # 下拉框选中 → 立即加载该图；刷新按钮 → 重新扫描
+        picker.change(_iframe_for, inputs=[picker], outputs=[view])
+        refresh_btn.click(_dropdown_update, inputs=[], outputs=[picker])
     return demo
 
 
