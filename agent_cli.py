@@ -9,6 +9,18 @@ CLI 入口（注意：不能叫 agent.py，会与 agent/ 包冲突）：
 import sys
 from pathlib import Path
 
+# Windows GBK 控制台 / pythonw 无控制台环境下，emoji 打印会抛 UnicodeEncodeError。
+# 统一把 stdout/stderr 设为 errors='replace'；pythonw 下 stdout 为 None 则换空设备。
+import io, os
+
+if sys.stdout is None:
+    sys.stdout = open(os.devnull, "w", encoding="utf-8", errors="replace")
+if sys.stderr is None:
+    sys.stderr = open(os.devnull, "w", encoding="utf-8", errors="replace")
+for _s in (sys.stdout, sys.stderr):
+    if hasattr(_s, "reconfigure"):
+        _s.reconfigure(errors="replace")
+
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from agent.executor import Executor
