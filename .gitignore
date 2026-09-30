@@ -8,3 +8,5 @@ __pycache__/
 *.zip
 *.whl
 *.tar.gz
+.env
+求职项目/
