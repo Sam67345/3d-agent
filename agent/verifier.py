@@ -25,8 +25,16 @@ def _check(cond, session, args, skill):
 
     # 文件存在类：优先检查用户直接给出的 file_paths（绝对/相对路径），
     # 否则按约定命名检查 data/<id>_filtered_feature_bc_matrix.h5ad
-    if cond.startswith("data/<sample_id>"):
+    if cond.startswith("data/<sample_id>") or "folder > file_paths" in cond:
         fps = args.get("file_paths")
+        if args.get("folder"):  # M7.1：folder 优先级最高
+            d = Path(args["folder"])
+            if not d.exists():
+                return False, f"folder 目录不存在: {args['folder']}"
+            if not d.is_dir():
+                return False, f"folder 必须是目录（不是文件）: {args['folder']}"
+            n = len(list(d.glob("*.h5ad")))
+            return n >= 2, f"folder 下的 h5ad 少于 2 个（实际 {n} 个）" if n < 2 else None
         if fps:
             if isinstance(fps, str):
                 fps = [f.strip() for f in fps.split(",")]

@@ -5,19 +5,72 @@
 - 结构性不可行（如基因不在面板、环境缺依赖）→ 诚实报告，禁止无限重试
 """
 
+import difflib
 import importlib
 import json
 import sys
 import traceback
 from pathlib import Path
 
-from .registry import ROOT, SKILLS_DIR
+from .registry import ROOT, SKILLS_DIR, load_registry
 from .session import StepLog, summary
 
 sys.path.insert(0, str(SKILLS_DIR))
 
 MECHANICAL = (FileNotFoundError, KeyError, ValueError, TypeError)
 MAX_RETRY = 1  # 有界重试：机械错误最多自动修一次
+
+# LLM 常编造的常见参数名 → 技能文档声明的真实参数名
+PARAM_ALIASES = {
+    "slice_ids": "sample_ids",      # 实际报错过的案例
+    "slice_id": "sample_ids",
+    "sample_names": "sample_ids",
+    "paths": "file_paths",
+    "path": "file_paths",
+    "h5ad_paths": "file_paths",
+    "folder_path": "folder",
+    "dir": "folder",
+    "data_folder": "folder",
+    "directory": "folder",
+    "n_interp": "n_layers",
+    "num_layers": "n_layers",
+    "layers": "n_layers",
+}
+
+
+def declared_inputs(skill, registry=None):
+    """技能 md 中声明的参数名集合。"""
+    reg = registry or load_registry()
+    meta = (reg or {}).get(skill) or {}
+    return {i["name"] for i in (meta.get("inputs") or []) if i.get("name")}
+
+
+def normalize_args(skill, args, registry=None, emit=None):
+    """参数名容错：LLM 编造的未声明参数先映射到最接近的已声明参数。
+
+    顺序：已声明 → PARAM_ALIASES → difflib 模糊匹配 -> 丢弃（并给出提示）。
+    返回 (修复后的 args, 说明列表)。
+    """
+    allowed = declared_inputs(skill, registry)
+    if not allowed:            # 内置技能等无声明的来源：原样透传
+        return dict(args), []
+    fixed, notes = {}, []
+    for k, v in args.items():
+        if k in allowed:
+            fixed[k] = v
+            continue
+        target = PARAM_ALIASES.get(k)
+        if target is None or target not in allowed:
+            close = difflib.get_close_matches(k, sorted(allowed), n=1, cutoff=0.62)
+            target = close[0] if close else None
+        if target:
+            notes.append(f"{k} → {target}")
+            fixed.setdefault(target, v)
+        else:
+            notes.append(f"丢弃未声明参数 {k}")
+    if emit and notes:
+        emit(f"  [normalize] {skill}: " + ", ".join(notes))
+    return fixed, notes
 
 
 def _code_for(skill, args, session):
@@ -27,8 +80,8 @@ def _code_for(skill, args, session):
         return (f"import sys; sys.path.insert(0, 'skills')\n"
                 f"from load_slices import run as load_slices\n"
                 f"pair = load_slices.run({json.dumps(a, ensure_ascii=False)})\n"
-                f"a1, a2 = pair['adata1'], pair['adata2']\n"
-                f"adatas = pair['adatas']")
+                f"adatas = pair['adatas']\n"
+                f"a1, a2 = adatas[0], adatas[1]")
     if skill == "interpolate":
         a = {k: v for k, v in args.items() if k not in ("adata1", "adata2")}
         return (f"from interpolate import run as interpolate\n"
@@ -58,10 +111,17 @@ class Executor:
         self.session = session
         self.llm = llm
         self.verbose = verbose
+        self._registry = None   # 惰性加载：只在需要参数校验时读 skills/*.md
 
     def _emit(self, msg):
         if self.verbose:
             print(msg)
+
+    @property
+    def registry(self):
+        if self._registry is None:
+            self._registry = load_registry()
+        return self._registry
 
     # ---- 各技能的实际调用（含 session 接线） ----
     # 由会话自动注入的数据对象参数：LLM 即使传入也会被安全忽略
@@ -74,17 +134,21 @@ class Executor:
 
     def _invoke(self, skill, args):
         session = self.session
-        args = dict(args)
+        # M7.1：调用前做参数名容错（LLM 编造的参数先映射再说）
+        args, _notes = normalize_args(skill, args, self._registry, emit=self._emit)
         for k in self.WIRED_ARGS.get(skill, ()):
             if k in args:
                 self._emit(f"  [wire] 忽略会话注入参数 {k}={args.pop(k)!r}")
         if skill == "load_slices":
             from load_slices import run
             r = run(**args)
-            session.slices = list(r["adatas"])
-            session.pair = (r["adata1"], r["adata2"])  # 前两张，向后兼容
+            adatas = list(r["adatas"])
+            session.slices = adatas       # M6.3：全部 N 张（按加载顺序）
+            session.adatas = adatas       # M7.1：同名别称，供多切片下游读取
+            # 前两张仍写入 pair（向后兼容；N > 2 时 r 不再含 adata1/adata2）
+            session.pair = (adatas[0], adatas[1]) if len(adatas) >= 2 else None
             session.pair_meta = r["meta"]
-            return {"meta": r["meta"]}
+            return {"meta": r["meta"], "n_slices": len(adatas)}
 
         if skill == "interpolate":
             from interpolate import run

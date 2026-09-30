@@ -75,16 +75,12 @@ class Agent:
         steps = expanded
 
         # 参数白名单过滤（可靠性来自架构而非 prompt）：LLM 编造的技能参数
-        # 在执行前直接丢弃并告知，而不是留给运行期报错
+        # 先尝试映射到最接近的已声明参数（M7.1），映射不了才丢弃并告知，
+        # 而不是留给运行期报 TypeError
+        from agent.executor import normalize_args
         for s in steps:
-            meta = self.registry[s["skill"]]
-            allowed = {i["name"] for i in meta.get("inputs", []) or []}
-            extra = set(s.get("args", {})) - allowed
-            if extra:
-                print(f"  🧹 丢弃未声明的参数 {sorted(extra)}"
-                      f"（{s['skill']} 仅支持 {sorted(allowed)}）")
-                for k in extra:
-                    del s["args"][k]
+            s["args"], _notes = normalize_args(s["skill"], s.get("args", {}),
+                                               self.registry, emit=print)
 
         for s in steps:
             skill, args = s["skill"], s.get("args", {})

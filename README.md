@@ -145,7 +145,7 @@ DLPFC 10x Visium 连续切片，取相邻 2 张：
 
 | 技能 | 实现 | 说明 |
 |---|---|---|
-| load_slices | `skills/load_slices.py` | 载入两张 h5ad + 归一化 + HVG 面板（复用 m1/m2 函数） |
+| load_slices | `skills/load_slices.py` | 载入 N 张（>= 2）h5ad + 归一化 + 公共基因面板（复用 m1/m2 函数）；输入优先级 `folder` > `file_paths` > `sample_ids` |
 | interpolate | `skills/interpolate.py` | 指定 alpha 生成虚拟切片（复用 `m2_interpolate.gen_one`，新增 `syn_mode` 参数透传） |
 | validate | `skills/validate.py` | 三项质量检查，返回结构化 dict（复用 `m2_validate.run_validation`） |
 | visualize_3d | `skills/visualize_3d.py` | plotly 3D 散点（每层一个 z、按 Region 着色）→ `output/view_3d.html` |
@@ -313,7 +313,7 @@ DLPFC 10x Visium 连续切片，取相邻 2 张：
 **M6.2 表达合成模式守卫**：面板基因数 > 5000 且 syn_mode="default" 时不再硬拒，返回 `{"mode": "guard", "warning": "...预计需数天，建议 fast；确认请传 confirm_default=true", "path": None}`，不生成任何文件。注意：DLPFC 默认 n_hvg=2000 的 HVG 面板只有 3436 基因 < 5000，不触发守卫；用 n_hvg=8000（面板 11,857 基因）验证拦截路径。已知遗留：default 模式真实执行会触发 MENDER 的 Windows 多进程崩溃（ValueError: need at most 63 handles；M2.5 已记录），不在本次范围。
 
 **M6.3 多切片支持**：
-- load_slices 放开"恰好 2 张"限制，返回 `adatas`（list）+ 前两张的 `adata1/adata2` 兼容字段
+- load_slices 放开"恰好 2 张"限制，返回 `adatas`（list）；N == 2 时额外返回 `adata1/adata2` 兼容字段（N > 2 时不再提供）
 - 新增技能 `interpolate_multiple`（skills/interpolate_multiple.py/.md）：`run(adata_list, n_layers, ...)`，n_layers 可 int（全部 N-1 对统一）或 list[int]（长度必须 N-1）；每对 alpha = j/(k+1) 升序；slice_id/文件名 `{id1}-{id2}-alpha{a:.3f}`（visualize_3d 的 alpha 正则可直接解析）
 - **不用 SpatialZ 的 `Generate_multiple_slices` 的原因**（读源码核实）：它末尾调 `AnnData.concatenate`（anndata 0.13.4 已无此方法），且命名不含 alpha，无法解析；改用逐层调用 `m2_interpolate.gen_one`（已加可选参数 adata1_id/adata2_id/slice_id，缺省保持 M2 行为）
 - session.py 加 `slices=[]`、`all_slices`、`has_slices` property（向后兼容 has_pair）；verifier 加 has_slices 分支；executor 加 adata_list 接线
@@ -322,6 +322,13 @@ DLPFC 10x Visium 连续切片，取相邻 2 张：
 **M6.4 会话级输出隔离**：`agent_cli.py` 启动时创建 `output/run_YYYYMMDD_HHMMSS/` 传入 session.run_dir；interpolate（out_dir）、make_dense、visualize_3d（out_path）、export_notebook 用户未显式指定路径时默认落 run_dir；resume 会话沿用旧 run_dir。验收：连续两个会话产出两个时间戳目录互不覆盖（8/8）。
 
 **验收汇总**（`tests/test_m6_generalization.py` 新增）：M6.1+6.2 14/14、M6.3 9/9、M6.4 8/8；回归：test_interpolate_ease 17/17、test_m4_agent、test_m3_skills 全部通过。
+
+**M7.1 多切片文件夹加载入口**：
+- `skills/load_slices.py` 新增 `folder` 参数：给文件夹即自动加载其中全部 `.h5ad`（按文件名**自然序**排序，4→9→14→19→24，而非字符串序 14→19→24→4→9），要求 >= 2 个；输入优先级 `folder > file_paths > sample_ids`
+- N > 2 时返回值收敛为 `{"adatas", "meta"}`；N == 2 保持原结构（含 `adata1/adata2`）向后兼容
+- `agent/executor.py`：load_slices 分支把 N 张切片写入 `session.slices`/`session.adatas`，并仍把前两张写入 `session.pair`（老流程不变）；interpolate_multiple 经 `session.all_slices` 读取，已验证 4 对 × 2 层
+- **参数名容错**：新增 `executor.normalize_args()`——把 LLM 编造的参数名（如实际报错过的 `slice_ids`）按「别名表 → difflib 模糊匹配」映射到最接近的已声明参数，映射不了才丢弃；`agent_cli.py` 的白名单过滤改为先调它再执行
+- `skills/load_slices.md` 同步 folder 的 inputs/preconditions/usage_example；`agent/verifier.py` 新增 folder 存在性与文件数检查
 
 **已知限制（既有行为，本次未改）**：多对切片时 visualize_3d 的真实切片层序按字母排序而非物理层序（虚拟层夹在中间且按 alpha 单调的两层间行为不受影响）。
 

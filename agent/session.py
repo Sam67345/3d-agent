@@ -72,6 +72,15 @@ class Session:
         return len(getattr(self, "slices", []) or []) >= 2 or self.has_pair
 
     @property
+    def adatas(self):
+        """M7.1：全部已加载切片的别称（等价 slices），供多切片下游技能读取。"""
+        return getattr(self, "slices", None) or []
+
+    @adatas.setter
+    def adatas(self, value):
+        self.slices = list(value)
+
+    @property
     def all_slices(self):
         """按顺序返回全部已加载切片（slices 优先，回退 pair）。"""
         s = getattr(self, "slices", None) or []

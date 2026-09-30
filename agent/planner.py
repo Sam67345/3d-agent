@@ -17,6 +17,8 @@ SYSTEM_PROMPT = """你是空间转录组 3D 插值系统的 Planner。把用户�
  "reply": "给用户的简短说明（可选）"}}
 规则：
 - 步骤顺序必须符合依赖：load_slices 先于 interpolate；interpolate 先于 make_dense/validate/visualize_3d
+- 会话已加载切片数 > 2 时，用户说"每对/各对/相邻切片之间插值"必须用 interpolate_multiple；
+  interpolate 只对前两张切片生效，此时不得选用
 - 参数只填技能 inputs 里声明的，不要编造参数
 - 数据对象参数（interpolate 的 adata1/adata2、validate 的 order/names、visualize_3d 的 adata）
   由系统自动从会话状态注入，绝对不要写进 args
@@ -33,7 +35,8 @@ class Planner:
         messages = [
             {"role": "system", "content": SYSTEM_PROMPT.format(table=routing_table(self.registry))},
             {"role": "user", "content": f"用户指令：{user_text}\n"
-                                        f"当前状态：已加载切片对={session.has_pair}, "
+                                        f"当前状态：已加载切片数={len(session.all_slices)}, "
+                                        f"已加载切片对={session.has_pair}, "
                                         f"已有虚拟切片={len(session.virtual_slices)}层, "
                                         f"已合并dense={session.has_dense}"},
         ]

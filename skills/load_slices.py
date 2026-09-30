@@ -2,9 +2,12 @@
 
 供 agent 通过技能注册表调用。逻辑复用 m1_load_data / m2_interpolate；
 M6.1：切片基因数 < n_hvg 时跳过 HVG 筛选直接用全基因面板（meta 注明 hvg_skipped）；
-M6.3：放开"恰好 2 张"限制，接受 N 张，按用户给定顺序排列。
+M6.3：放开"恰好 2 张"限制，接受 N 张，按用户给定顺序排列；
+M7.1：新增 folder 参数——给文件夹即自动加载其中全部 .h5ad（自然序，如 4/9/14/19/24
+      而非字符串序 14/19/24/4/9），优先级 folder > file_paths > sample_ids。
 """
 
+import re
 import sys
 from pathlib import Path
 
@@ -79,7 +82,27 @@ def _make_panel_multi(preps, use_hvg):
     return out
 
 
-def run(sample_ids=None, n_hvg=2000, data_dir=None, file_paths=None):
+def _natural_key(text):
+    """文件名自然序键：把数字段按数值比较（4 < 9 < 14 < 19 < 24）。"""
+    return [int(s) if s.isdigit() else s.lower()
+            for s in re.split(r"(\d+)", str(text))]
+
+
+def _expand_folder(folder):
+    """文件夹 → 其中全部 .h5ad 的路径列表（自然序），要求 >= 2 个。"""
+    d = Path(folder)
+    if not d.exists():
+        raise FileNotFoundError(f"folder 目录不存在: {folder}")
+    if not d.is_dir():
+        raise ValueError(f"folder 必须是目录（不是文件）: {folder}")
+    paths = sorted(d.glob("*.h5ad"), key=lambda p: _natural_key(p.name))
+    if len(paths) < 2:
+        raise ValueError(
+            f"folder 下至少需要 2 个 .h5ad 文件: {folder}（实际找到 {len(paths)} 个）")
+    return paths
+
+
+def run(sample_ids=None, n_hvg=2000, data_dir=None, file_paths=None, folder=None):
     """载入并预处理 N 张切片（N >= 2），返回插值就绪的切片列表。
 
     Parameters
@@ -95,15 +118,22 @@ def run(sample_ids=None, n_hvg=2000, data_dir=None, file_paths=None):
     file_paths : list[str] | None
         N 个 h5ad 的绝对/相对路径，直接加载（优先于 sample_ids）。
         用于 MERFISH 等不符合约定命名的数据。
+    folder : str | Path | None
+        M7.1：文件夹路径，自动加载其中全部 .h5ad（按文件名自然序排列）。
+        优先级最高：folder > file_paths > sample_ids。
 
     Returns
     -------
     dict:
         adatas : list[AnnData]  按输入顺序的 N 张切片（归一化 + 面板 + dense float32）
-        adata1, adata2          前两张（向后兼容老的两切片流程）
+        adata1, adata2          仅 N == 2 时提供（向后兼容老的两切片流程）
         meta : list[dict]       每张切片的 spot 数、基因数、坐标范围、hvg_skipped
     """
-    if file_paths is not None:
+    if folder is not None:
+        paths = _expand_folder(folder)
+        raws = [_load_one_h5ad(p) for p in paths]
+        ids = [Path(p).stem for p in paths]
+    elif file_paths is not None:
         if isinstance(file_paths, (str, Path)):
             file_paths = [file_paths]
         paths = list(file_paths)
@@ -152,5 +182,11 @@ def run(sample_ids=None, n_hvg=2000, data_dir=None, file_paths=None):
             "hvg_skipped": hvg_skipped,
         }
 
-    return {"adatas": adatas, "adata1": adatas[0], "adata2": adatas[1],
-            "meta": [_meta(a, sid) for a, sid in zip(adatas, ids)]}
+    metas = [_meta(a, sid) for a, sid in zip(adatas, ids)]
+    # M7.1：N > 2 时不再返回含义模糊的 adata1/adata2（多切片请用 adatas）；
+    # N == 2 保持原有结构（含 adata1/adata2），老流程与既有测试完全不受影响
+    out = {"adatas": adatas, "meta": metas}
+    if len(adatas) == 2:
+        out["adata1"] = adatas[0]
+        out["adata2"] = adatas[1]
+    return out
