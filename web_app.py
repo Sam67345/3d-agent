@@ -10,6 +10,7 @@
 import html as html_mod
 import os
 import time
+import urllib.parse
 from pathlib import Path
 
 import gradio as gr
@@ -122,10 +123,13 @@ def _iframe_for(rel_path):
     full = OUTPUT_DIR / rel_path
     if not full.exists():
         return PLACEHOLDER
-    rel = full.relative_to(ROOT).as_posix()
+    # gradio 的 file 路由要求绝对路径（相对路径会 404 → iframe 空白），
+    # 且路径必须 URL 编码（含中文目录名时必须）
+    abs_path = str(full.resolve())
+    encoded = urllib.parse.quote(abs_path, safe=":/\\")
     return (
         # gradio 6 的静态文件路由为 /gradio_api/file=（旧版为 /file=）
-        f'<iframe src="/gradio_api/file={rel}" style="width:100%;height:720px;'
+        f'<iframe src="/gradio_api/file={encoded}" style="width:100%;height:720px;'
         'border:1px solid #ddd;border-radius:8px;background:#fff;"'
         ' title="3D 视图"></iframe>'
     )

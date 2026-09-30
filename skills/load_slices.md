@@ -1,12 +1,12 @@
 ---
 name: load_slices
-description: 载入 N 张（>= 2）h5ad 切片并完成归一化与公共基因面板预处理，输出可直接插值的切片列表（小基因面板自动跳过 HVG）
+description: 载入 N 张（>= 2）h5ad 切片并完成归一化与公共基因面板预处理，输出可直接插值的切片列表（小基因面板自动跳过 HVG）。folder 参数仅在用户明确要求加载某个文件夹下的全部切片时才使用；用户点名了具体切片 ID 或文件路径时必须用 sample_ids/file_paths，禁止用 folder 顶替。
 inputs:
   - name: folder
     type: str
     required: false
     default: null
-    range: "给一个文件夹路径，自动加载其中全部 .h5ad，按文件名排序（自然序：4 < 9 < 14 < 19 < 24）；文件夹内需 >= 2 个 h5ad；优先级高于 file_paths 与 sample_ids"
+    range: "给一个文件夹路径，自动加载其中全部 .h5ad，按文件名排序（自然序：4 < 9 < 14 < 19 < 24）；文件夹内需 >= 2 个 h5ad；优先级高于 file_paths 与 sample_ids。**仅当用户明确说要加载某个文件夹下的全部切片时才使用本参数；用户指定了具体切片 ID 或文件路径时，禁止使用本参数**"
   - name: file_paths
     type: list[str]
     required: false
