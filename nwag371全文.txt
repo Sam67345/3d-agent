@@ -1,0 +1,337 @@
+===== PAGE 1 =====
+© The Author(s) 2026. Published by Oxford University Press on behalf of China Science Publishing & Media Ltd. This is an Open Access article
+distributed under the terms of the Creative Commons Attribution License (https://creativecommons.org/licenses/by/4.0/), which permits unrestricted reuse,
+distribution, and reproduction in any medium, provided the original work is properly cited.
+ORIGINAL UNEDITED MANUSCRIPT
+PERSPECTIVE 
+A User’s Roadmap to Foundation Models on Single-Cell and Spatial-Omics – Cell Type and Lineage 
+applications 
+Qixing Yang1,2#, Yijin Zhou1,#, Huanlin Zhang1,#, Mingyu Cai1, Jie Hong2, Kai Li1, Xuping Xie1, 
+Chengshuang Chu1, Chunman Zuo1,* 
+ 
+1 Innovation Center for Evolutionary Synthetic Biology, School of Life Sciences, Sun Yat-sen University, 
+Guangzhou 510275, China 
+2 College of Computer Science and Technology, Jilin University, Changchun 130022, China 
+ 
+# These authors contributed equally to this work. 
+* To whom correspondence should be addressed. 
+Email: zuochm@mail.sysu.edu.cn 
+ 
+Foundation models (FMs) are reshaping computational biology by learning transferable representations from 
+single-cell and spatial omics data, yet their usage in actual routine bioinformatics has not lived to the 
+prediction. A simple reason is the wide gap between tool development and clientele. Users’ guides (or 
+consumer reports) may bridge the gap. Here, we present a user-centric guide to seven FMs—scGPT, 
+scFoundation, CellPLM, Geneformer, SCimilarity, Nicheformer, and SToFM. The primary evaluation 
+focuses on three practically supported tasks: batch correction, cell-type annotation, and cellular 
+differentiation reconstruction, the latter of which was explored in both zero-shot and fine-tuned settings. 
+Two additional tasks, GRN inference and gene perturbation prediction, are included to inform readers of the 
+current capability boundaries in the field. For all tasks, we followed the protocols described in each model’s 
+original publication and official repository. In addition to downstream performance, we systematically assess 
+the documentation and tutorials, installation difficulty, stability, memory usage, and GPU compatibility. 
+Current FMs perform well on relatively static tasks, but remain limited in recovering dynamic lineage 
+relationships and gene regulatory networks. Their practical use is further constrained by fragile software 
+environments and inefficient resource management. We also show that LLM-assisted agent-like workflows 
+can reduce barriers to practical use by automating code writing, revision, and dependency analysis. While 
+knowledge-informed FMs, coupled with robust agentic tools, are expected to make FMs more powerful, 
+users’ guides may make them genuinely usable in biological research. 
+In the life sciences, AI foundation models (FMs) have the promise (not fully realized yet) of marking a 
+paradigm shift. Originally developed for language and vision tasks, Transformer-based models are now 
+enabling new ways to interpret biological data, capturing transferable representations that generalize across 
+datasets, species, and modalities. In the single-cell and spatial transcriptomics fields, FMs are redefining 
+how researchers explore cellular heterogeneity, tissue organization, and regulatory interactions by learning 
+universal molecular embeddings from large-scale data1-7.  
+However, the practical usability of these models in everyday bioinformatics workflows remains 
+underexplored. Existing benchmark studies have largely focused on algorithmic performance, while 
+neglecting critical real-world factors—installation difficulty, documentation completeness, GPU 
+compatibility, and error handling8,9. In reality, even experienced users often struggle to set up environments, 
+revised codes for new datasets, or adapt pretrained models to novel tasks. Meanwhile, the increasing 
+accessibility of large language models (LLMs) such as ChatGPT10 and Codex11 has opened new possibilities 
+for AI-assisted workflow support. In routine FM-related operations, these tools may help improve efficiency, 
+Downloaded from academic.oup.com/nsr/advance-article/doi/10.1093/nsr/nwag371/8707689 by The first affiliated hospital of Sun Yat-sen University user on 28 September 2026
+
+===== PAGE 2 =====
+ORIGINAL UNEDITED MANUSCRIPT
+but their practical roles in real-world workflows remain incompletely characterized. 
+To address this gap, we propose a user-centric evaluation framework to assess the practical performance, 
+usability, and adaptability of single-cell and spatial FMs. By combining empirical benchmarking with 
+real-user studies and LLM-assisted adaptation, this work seeks to bridge the gap between algorithmic 
+innovation and its tangible impact in bioinformatics practice. Our goal is to advance the next phase of 
+AI-driven biology—where models are not only accurate but also usable, reproducible, and accessible to the 
+broader life-science community. 
+Study design and evaluation protocol. We recruited six participants from computer science, mathematics, 
+and biology across undergraduate, master’s, and doctoral levels to evaluate seven representative FMs: five 
+for single-cell omics data (scGPT1, scFoundation2, Geneformer3, CellPLM4, and SCimilarity5) and two for 
+spatial omics data (Nicheformer6 and SToFM7) (Fig.1a). These models were chosen because they are either 
+recently published or widely regarded as strong performers in existing benchmarks8,9. Details on each 
+model’s accessibility and published date are summarized in Supplementary Table 1. Participants performed 
+five tasks—batch-effect correction, cell-type annotation, differentiation characterization, GRN inference, 
+and gene perturbation prediction—on three GPU platforms (RTX 4090, L40, and RTX PRO 6000). They 
+documented each step in detail, from environment setup to downstream analysis, including runtime, GPU 
+memory usage, and task outcomes. Importantly, all participants were allowed to use LLMs (e.g., Codex11, 
+ChatGPT10, and Gemini12) to assist with debugging, code writing, and code revision, thereby simulating 
+real-world research practice. The LLM-assisted workflow was included solely to facilitate the practical use 
+of FMs and to reflect realistic usage scenarios, rather than as a formal component of the modeling 
+framework.  
+Software usability and developer maintenance. High-quality tutorials, reproducible environment setup, 
+and timely responses from developers are essential for the practical application of FMs. All models were 
+evaluated using the same metrics and procedures, following the recommended settings in the original 
+publications. In addition, participants were free to evaluate the models in any order, thereby reducing 
+potential order effects. To improve transparency, we also visualized the raw records for each participant. 
+According to user’s evaluation, SCimilarity and CellPLM provided the smoothest installation experience, 
+featuring detailed tutorials and self-contained dependencies (Fig.1b, c). In contrast, models such as scGPT, 
+scFoundation, Geneformer, Nicheformer, and SToFM presented numerous challenges, including missing 
+setup scripts and strict version dependencies. Moreover, scGPT failed to compile on the latest NVIDIA 
+architectures due to conflicts between PyTorch and torchtext libraries. Although scGPT provided a web 
+interface, its functionality remained limited for complex analyses. In terms of maintenance—evaluated 
+based on the responsiveness of issue handling on GitHub and Hugging Face—Geneformer stood out for its 
+strong developer support, with issues being actively triaged and addressed on a near-daily basis. In contrast, 
+the other models generally showed lower levels of maintainer engagement and slower issue resolution. 
+Overall, these findings underscore the need for standardized deployment pipelines and sustained 
+maintenance to improve reproducibility and compatibility. 
+Batch effect correction. Batch effect correction is essential in single-cell and spatial transcriptomics 
+because technical differences across platforms, chemistries, runs, or slides can mimic biology and inflate 
+false positives, including in perturbation inference. Intuitively, it “recalibrates” datasets to a common 
+baseline—like correcting for different lighting—so comparable cell states or tissue regions align, while true 
+biological signals (cell identities, trajectories, and spatial structure) are preserved. 
+This task evaluated how effectively each FM mitigates batch effects on single-cell dataset Immune Cell 
+Atlas and spatial omics dataset DLPFC (Supplementary Table 2). Using pretrained weights, we conducted 
+zero-shot inference and ranked models by ASW-batch scores. [Note - Zero-shot refers to a model's ability to 
+Downloaded from academic.oup.com/nsr/advance-article/doi/10.1093/nsr/nwag371/8707689 by The first affiliated hospital of Sun Yat-sen University user on 28 September 2026
+
+===== PAGE 3 =====
+ORIGINAL UNEDITED MANUSCRIPT
+perform a task without having seen any explicit training examples for that specific task.] 
+SCimilarity and Nicheformer exhibited superior batch-correction performance, with SCimilarity providing 
+the best tutorials and scripts for obtaining cell embeddings (Fig.1b, h). In contrast, scFoundation, 
+Nicheformer, and SToFM required extensive manual preprocessing (e.g., gene order), and Geneformer also 
+contained hard-coded parameters (n_count) that further reduced portability. These results are largely 
+consistent with prior benchmark8: SCimilarity remains competitive, whereas CellPLM tends to rank lower 
+on immune atlas datasets. By contrast, scGPT performs worse in our evaluation than previously reported. 
+This discrepancy likely stems from differences in evaluation protocols: we used a zero-shot learning setting, 
+whereas the prior study assessed scGPT under fine-tuning8. 
+To address these challenges, we explored LLM-assisted code refactoring as one practical strategy, using 
+tools such as Codex to automatically analyze, generate, and revise code, and help resolve execution errors 
+(Supplementary Note 1), thereby providing practical guidance for users. This substantially improved 
+reproducibility and reduced debugging time. Overall, although FMs perform well technically, LLM-based 
+assistance can greatly enhance usability, automation, and accessibility. 
+Cell type annotation. Cell type annotation is a foundational step in the analysis of single-cell and spatial 
+transcriptomics data, as it assigns each cell (or spot) an interpretable biological identity based on its gene 
+expression profile. Without reliable annotation, downstream analyses—such as differential expression, and 
+cell–cell communication—can be easily misinterpreted or driven by technical noise rather than true biology. 
+Following each FM’s tutorial, we added a classification head and fine-tuned the model on the HumanPBMC 
+single-cell RNA-seq dataset and the DLPFC spatial transcriptomics dataset (Supplementary Table 2), with 
+performance evaluated by accuracy and recall. SCimilarity performs better in our evaluation than in prior 
+benchmarks8, likely because we applied full fine-tuning, whereas earlier studies evaluated it in a zero-shot 
+setting. By contrast, scGPT ranks lower in our benchmark. This drop appears to be driven by compatibility 
+issues with modern high-performance GPUs, which prevented full fine-tuning and forced us to adopt a 
+partial fine-tuning strategy (unfreezing only a subset of layers). While CellPLM provided the most 
+user-friendly scripts for obtaining results (Fig.1c, i). Nicheformer, however, lacked support for classification, 
+as its fine-tuning scripts were designed for regression tasks. Despite these differences, all single-cell FMs 
+performed well after fine-tuning, consistently maintaining high accuracy (mostly above 0.9), and the 
+difference between models were not significant.  
+Participants employed LLMs to customize fine-tuning scripts, and we found that targeted prompts (for 
+example, asking Codex to compare the training logic of scFoundation and Nicheformer) were substantially 
+more effective than generic instructions. However, the usefulness of LLMs depended strongly on prompt 
+specificity, and key decisions regarding model logic and architecture still required human judgment 
+(Supplementary Note 2 provides practical guidance). We also observed marked differences in memory 
+efficiency across models: scGPT required more than 40 GB memory for full fine-tuning, whereas 
+scFoundation used more than 96 GB under its default settings; notably, this could be reduced to 
+approximately 12 GB by adding a GPU cache-clearing step. Finally, most FMs lacked built-in visualization 
+functions, requiring users to generate plots manually, which further underscores the need for more 
+interactive and interpretable tool design.  
+Cellular differentiation tree reconstruction. Cellular differentiation tree reconstruction builds an 
+interpretable “roadmap” of how cells transition from early to mature states in single-cell and spatial 
+transcriptomics data. Because many tissues—especially tumors—contain continuous, transitional states that 
+are not well captured by discrete labels, this analysis orders cells along trajectories and branching points to 
+reveal state changes and lineage progression across conditions and spatial contexts. 
+Downloaded from academic.oup.com/nsr/advance-article/doi/10.1093/nsr/nwag371/8707689 by The first affiliated hospital of Sun Yat-sen University user on 28 September 2026
+
+===== PAGE 4 =====
+ORIGINAL UNEDITED MANUSCRIPT
+We further explored whether FMs can capture cell lineage relationships using simulated continuous 
+single-cell and spatial omics data generated by scMultiSim 13 (Fig. 2a, b). The embeddings from FMs serve 
+as cell representations that capture the structure of the data distribution. In this space, proximity between 
+embeddings reflects similarity along a continuous state manifold, offering a proxy for lineage relationships. 
+Under zero-shot learning, all models produced highly mixed embeddings with little separation between cell 
+stages. In contrast, fine-tuning with class labels markedly improved both clustering and lineage inference. 
+Among the fine-tuned models, scFoundation performed best, SCimilarity ranked second, and CellPLM 
+ranked third (Fig. 2c, d), while most other FMs still failed to recover the underlying differentiation 
+relationships. Thus, although many FMs are effective for static classification, they generally struggle to 
+characterize evolutionary continuity, especially in the zero-shot setting, highlighting a key challenge for the 
+field. 
+Gene perturbation prediction. Such evaluations will require detailed analyses currently in progress. The 
+perturbation task predicts post-treatment transcriptional profiles. Only scGPT and scFoundation provided 
+runnable scripts for fine-tuning; for the remaining models, we were unable to establish usable fine-tuning 
+pipelines for this task. We therefore followed the official procedures described in the scGPT and 
+scFoundation GitHub repositories, respectively, and evaluated performance using both mean squared error 
+(MSE) and Pearson correlation. The evaluation results show that scFoundation converges faster and achieves 
+higher predictive accuracy than scGPT. Its standardized shell scripts and clear documentation allowed for 
+the reproduction of experiments by specifying data paths, drastically reducing setup time. In contrast, 
+scGPT’s missing dependency package (e.g., gears) impeded installation. These results emphasize the value 
+of end-to-end executable pipelines and detailed documentation in reducing barriers to model deployment. 
+Gene regulatory network inference. Gene regulatory network inference goes beyond marker genes to 
+identify the regulators that drive cell states in single-cell and spatial transcriptomics data. By modeling 
+regulatory relationships between transcription factors and target genes, it explains why cell types or tissue 
+regions activate distinct programs and highlights candidate master regulators linked to disease or treatment 
+response. We next tested whether FMs could recover a predefined GRN using simulated data generated by 
+scMultiSim13 (Fig. 2a, b). We treated the gene embeddings produced by FMs as representations learned from 
+data, and assumed that proximity in the embedding space captures functional or statistical associations rather 
+than direct regulatory or causal relationships 1,2. Although such proximity does not by itself imply regulation, 
+it may still provide useful signal for distinguishing true transcription factor and target pairs from unrelated 
+gene pairs. At the same time, directly computing similarity from embeddings is a simplified strategy and 
+may not fully exploit the information encoded in these vectors 2. Therefore, to enable fair comparisons 
+across models, we adopted a unified GRN inference framework in which a discriminator was trained on 
+gene embeddings to predict edge probabilities. Performance was then evaluated by AUROC using the 
+ground-truth GRN of the simulated data. Only scGPT, scFoundation, and Geneformer provided usable 
+workflows. scGPT’s gene embeddings primarily reflected broad biological priors that were largely 
+independent for the input data, whereas scFoundation and Geneformer produced embeddings that were 
+strongly dependent on the specific input data. Although scGPT achieved the highest reconstruction metrics, 
+AUROC values hovered around 0.5—essentially random. Fine-tuning improved metrics by ~20–30% 
+(Fig.1j), underscoring the importance of supervised learning, but FM-based GRN inference remains 
+unreliable and of limited practical use. This highlights the gap between data-driven embedding similarity 
+and true mechanistic understanding.  
+Conclusion - Transformer-based FMs are redefining bioinformatics by learning general-purpose molecular 
+representations. Through a consumer-oriented evaluation, we demonstrate that while current FMs can 
+capture meaningful biological structure, their usability and adaptability remain major bottlenecks. Fragile 
+software environments, incomplete documentation, and inefficient resource management frequently 
+Downloaded from academic.oup.com/nsr/advance-article/doi/10.1093/nsr/nwag371/8707689 by The first affiliated hospital of Sun Yat-sen University user on 28 September 2026
+
+===== PAGE 5 =====
+ORIGINAL UNEDITED MANUSCRIPT
+undermine the reproducibility of these models in practice. LLM-assisted code writing and modification 
+offers a promising solution: from an agentic perspective, LLMs such as Codex can act as lightweight 
+orchestrators—automating environment setup, script adaptation, and error handling—to make FMs more 
+accessible to non-expert users. We acknowledge the importance of standardized workflows and 
+configuration records for improving reproducibility and practical usability (Supplementary Note 3); these 
+resources will be further consolidated in our future work and released more comprehensively in a structured 
+repository. 
+Beyond usability, our results highlight a conceptual limitation: most current FMs are optimized for static 
+prediction but not for relational or dynamic biology 14. They can classify and integrate cells effectively, yet 
+fail to reconstruct gene regulatory or lineage relationships, reflecting a shallow understanding of causality 
+and temporal dependencies. A substantial body of work suggests that current AI models still do not achieve 
+sufficiently accurate prediction of GRNs or perturbation responses for reliable practical use 8,9,15,16. At 
+present, no model can be confidently recommended for real-world applications in these tasks. We will 
+further investigate the underlying reasons in a follow-up study. As an illustrative example, when using 
+scFoundation for the cell-type annotation task, two participants required 12 and 18 rounds of effective 
+interaction, respectively, to get the pipeline running with ChatGPT and Gemini. Although these counts do 
+not constitute a formal benchmark, as they are influenced by prompt quality and prior experience with 
+LLMs, they nevertheless suggest that model performance may differ in practice. 
+Moreover, we provide model recommendations tailored to three user groups by considering usability, setup 
+difficulty, and the diversity of downstream tasks. Specifically, (i) clinicians or experimental biologists with 
+limited computational expertise may benefit most from scGPT, whose web-based interface avoids direct 
+coding and typically requires only the upload of input data to generate results; (ii) molecular biologists with 
+moderate scripting experience may begin with relatively easy-to-configure FMs, such as SCimilarity and 
+CellPLM, to become familiar with the overall workflow and key analysis steps; and (iii) computational 
+biologists or bioinformaticians may further explore more extensible models, including Geneformer, scGPT, 
+and scFoundation (Figs.1, 2). Their stronger developer maintenance can facilitate version updates, 
+dependency compatibility fixes, and community support, thereby reducing the long-term costs of 
+deployment and reproducibility. With the continued evolution and wider adoption of agent technologies, 
+these practical challenges are likely to be alleviated further. 
+To advance the field, we advocate for knowledge-informed FMs that explicitly integrate biological 
+priors—such as pathways, GRNs, lineage constraints and spatial organization—into their architectures and 
+training objectives 17,18. Coupled with agentic LLM tools capable of autonomous code adaptation, data 
+validation, and visualization, such models could evolve from isolated algorithms into intelligent research 
+companions. By bridging algorithmic innovation with practical usability, this study lays the foundation for a 
+more accessible, interpretable, and human-centered era of AI-driven biology. 
+Methods for Evaluation of the accuracy of cell differentiation tree inference. To assess the ability of 
+different FMs to reconstruct the cell differentiation tree, we defined a differentiation tree consistency (DTC) 
+score. Specifically, (1) for each FM, we inferred pseudotime using DPT based on its latent features; (2) Let 
+𝐸 denote the set of differentiation relations in the reference tree, where cluster 𝑗 is the direct downstream 
+(child) of cluster 𝑖, then (𝑖,𝑗) forms a parent–child pair and is included in 𝐸. Based on all such parent–
+child pairs (𝑖,𝑗) ∈  𝐸, DTC is defined as: 
+𝐷𝑇𝐶 = ෍ 𝑡̅௝
+(௜,௝)∈ ா
+ − 𝑡̅௜ (1) 
+where 𝑡̅௜ and 𝑡̅௝ denote the mean DPT pseudo-time of clusters 𝑖 and 𝑗, respectively. For each parent–
+Downloaded from academic.oup.com/nsr/advance-article/doi/10.1093/nsr/nwag371/8707689 by The first affiliated hospital of Sun Yat-sen University user on 28 September 2026
+
+===== PAGE 6 =====
+ORIGINAL UNEDITED MANUSCRIPT
+child edge, 𝑡̅௝ −  𝑡̅௜ > 0 indicates that the inferred differentiation direction is consistent with the prior 
+differentiation tree, whereas a negative value indicates a reversed (i.e., incorrect) direction. A higher DTC 
+value indicates a more accurate reconstruction of the differentiation structure. 
+Real single-cell and spatial omics datasets. We used three publicly available real single-cell and spatial 
+transcriptomics datasets, as summarized in Supplementary Table 2. 
+Simulated dataset. To evaluate whether FMs can reconstruct cellular trajectories from gene expression data, 
+we used scMultiSim13 to simulate a single-cell dataset with 7,000 cells (intrinsic.noise = 0.3) and a spatial 
+dataset with 3,000 cells (intrinsic.noise = 0.3). The simulations were guided by gene–gene relationships 
+from the TRRUST database (Supplementary Table 2) and a custom-defined differentiation tree. Note that 
+under continuous simulation, the root node cannot be simulated 13, hence root cluster 8 is absent from our 
+datasets (Fig. 2a, b). 
+ACKNOWLEDGEMENTS 
+This work was supported by the National Natural Science Foundation of China (Nos. 32570769, T2541043, 
+32293193, 32300523, and 62132015).  
+REFERENCES 
+1 Cui, H.  et al. scGPT: toward building a foundation model for single-cell multi-omics using generative AI. Nature methods 
+21, 1470–1480 (2024).  
+2 Hao, M.  et al. Large-scale foundation model on single-cell transcriptomics. Nature methods 21, 1481–1491 (2024).  
+3 Theodoris, C. V.  et al. Transfer learning enables predictions in network biology. Nature 618, 616–624 (2023). 
+https://doi.org/10.1038/s41586-023-06139-9 
+4 Wen, H.  et al. CellPLM: Pre-training of cell language model beyond single cells. BioRxiv, 2023.2010. 2003.560734 (2023).  
+5 Heimberg, G.  et al. A cell atlas foundation model for scalable search of similar human cells. Nature 638, 1085–1094 
+(2025).  
+6 Tejada-Lapuerta, A. et al. Nicheformer: a foundation model for single-cell and spatial omics. Nature methods, 1–14 
+(2025).  
+7 Zhao, S.  et al. Stofm: a multi-scale foundation model for spatial transcriptomics. arXiv preprint arXiv:2507.11588 (2025).  
+8 Liu, T ., Li, K., Wang, Y., Li, H. & Zhao, H. Evaluating the utilities of foundation models in single-cell data analysis. bioRxiv, 
+2023.2009. 2008.555192 (2023).  
+9 Kedzierska, K. Z., Crawford, L., Amini, A. P . & Lu, A. X. Zero-shot evaluation reveals limitations of single-cell foundation 
+models. Genome Biology 26, 101 (2025).  
+10 Achiam, J.  et al. Gpt-4 technical report. arXiv preprint arXiv:2303.08774 (2023).  
+11 Chen, M. Evaluating large language models trained on code. arXiv preprint arXiv:2107.03374 (2021).  
+12 Comanici, G.  et al. Gemini 2.5: Pushing the frontier with advanced reasoning, multimodality, long context, and next 
+generation agentic capabilities. arXiv preprint arXiv:2507.06261 (2025).  
+13 Li, H., Zhang, Z., Squires, M., Chen, X. & Zhang, X. scMultiSim: simulation of single-cell multi-omics and spatial data 
+guided by gene regulatory networks and cell–cell interactions. Nature Methods 22, 982–993 (2025). 
+https://doi.org/10.1038/s41592-025-02651-0 
+14 Gao, P .  et al. Spatiotemporal multi-omics analysis uncovers NAD-dependent immunosuppressive niche triggering early 
+gastric cancer . Signal Transduction and Targeted Therapy 10, 313 (2025).  
+15 Kernfeld, E., Yang, Y ., Weinstock, J. S., Battle, A. & Cahan, P . A comparison of computational methods for expression 
+forecasting. Genome Biology 26, 388 (2025). https://doi.org/10.1186/s13059-025-03840-y 
+16 Wong, D. R., Hill, A. S. & Moccia, R. Simple controls exceed best deep learning algorithms and reveal foundation model 
+effectiveness for predicting genetic perturbations. Bioinformatics 41 (2025). 
+https://doi.org/10.1093/bioinformatics/btaf317 
+Downloaded from academic.oup.com/nsr/advance-article/doi/10.1093/nsr/nwag371/8707689 by The first affiliated hospital of Sun Yat-sen University user on 28 September 2026
+
+===== PAGE 7 =====
+ORIGINAL UNEDITED MANUSCRIPT
+17 Chen, L., Liu, R., Liu, Z.-P ., Li, M. & Aihara, K. Detecting early-warning signals for sudden deterioration of complex 
+diseases by dynamical network biomarkers. Sci Rep-Uk 2, 342 (2012).  
+18 Zuo, C., Xia, J. & Chen, L. Dissecting tumor microenvironment from spatially resolved transcriptomics data by 
+heterogeneous graph learning. Nature Communications 15, 5057 (2024).  
+19 Haghverdi, L., Büttner, M., Wolf, F. A., Buettner , F. & Theis, F. J. Diffusion pseudotime robustly reconstructs lineage 
+branching. Nature Methods 13, 845–848 (2016). https://doi.org/10.1038/nmeth.3971 
+ 
+  
+Downloaded from academic.oup.com/nsr/advance-article/doi/10.1093/nsr/nwag371/8707689 by The first affiliated hospital of Sun Yat-sen University user on 28 September 2026
+
+===== PAGE 8 =====
+ORIGINAL UNEDITED MANUSCRIPT
+FIGURE LEGENDS 
+ Fig. 1. User-centric evaluation workflow, usability, computational efficiency, and downstream performance of single-cell and spatial FMs. (a) Overview of the study design and evaluation protocol. Participants from computer science, mathematics and biology, spanning undergraduate to doctoral levels, with varied experience in Python, R, and FMs, followed GitHub or Hugging Face tutorials to set up 
+Downloaded from academic.oup.com/nsr/advance-article/doi/10.1093/nsr/nwag371/8707689 by The first affiliated hospital of Sun Yat-sen University user on 28 September 2026
+
+===== PAGE 9 =====
+ORIGINAL UNEDITED MANUSCRIPT
+environments, load pretrained models, set hyperparameters and run zero-shot or fine-tuned analyses. For 
+every model–task combination, users recorded documentation quality, setup difficulty, time cost, GPU 
+memory usage and downstream performance metrics. Noted that scFM and stFM indicate single-cell and 
+spatial FM, respectively. (b) Tutorial quality ranked by six participants, with lower ranks indicating better 
+tutorial quality. (c) Environment setup difficulty ranked by six participants, with lower ranks indicating 
+easier setup. (d) Developer maintenance measured by the latest reply date to community-raised issues, 
+where more recent dates indicate stronger ongoing support. (e) GPU memory usage across evaluated FMs. (f) 
+Runtime across evaluated FMs. (g) Issue closure rate, calculated as closed issues divided by total issues; 
+numbers indicate closed issues / total issues. (h) Batch-effect correction performance measured by 
+ASW-batch, where lower values indicate better batch mixing. (i) Cell-type annotation performance 
+measured by accuracy, where higher values indicate better performance. (j) GRN inference performance 
+measured by AUROC for zero-shot and fine-tuned settings. Purple denotes zero-shot learning and red 
+denotes fine-tuning learning. For boxplots, the center line denotes the median, boxes indicate the 
+interquartile range, and whiskers extend to 1.5×IQR. 
+ 
+Downloaded from academic.oup.com/nsr/advance-article/doi/10.1093/nsr/nwag371/8707689 by The first affiliated hospital of Sun Yat-sen University user on 28 September 2026
+
+===== PAGE 10 =====
+ORIGINAL UNEDITED MANUSCRIPT
+ Fig. 2. Benchmarking FMs for gene regulatory network and cell trajectory inference using simulated data. (a) GRNs and differentiation trees were used as input to scMultiSim to generate single-cell and spatial transcriptomics data containing gene expression matrices and spatial coordinates. (b) UMAP projections and spatial visualizations illustrate distinct cell types in single-cell RNA-seq and spatial transcriptomics data. (c) Bar plot showing the accuracy of cell differential relationship inference, measured by differentiation tree consistency (DTC) score computed from DPT19-based pseudo-time. (d) Top two rows show UMAP visualizations of latent embeddings generated by seven FMs under zero-shot and fine-tuning modes. Bottom two rows present DPT-based pseudotime and PAGA results computed from the fine-tuned embeddings of these seven FMs.   
+Downloaded from academic.oup.com/nsr/advance-article/doi/10.1093/nsr/nwag371/8707689 by The first affiliated hospital of Sun Yat-sen University user on 28 September 2026
+

@@ -1,0 +1,2250 @@
+RESEARCH ARTICLE 
+National Science Review 
+11: nwae215, 2024 
+https://doi.org/10.1093/nsr/nwae215
+Advance access publication 22 June 2024 
+MOLECULAR BIOLOGY & GENETICS 
+Soma-germline communication drives sex maintenance 
+in the Drosophila testis 
+Rui Zhang1 , † , Peiyu Shi2 , † , Shuyang Xu1 , Zhe Ming1 , Zicong Liu1 , Yuanyuan He1 , 
+Junbiao Dai 1 , Erika Matunis3 , Jin Xu 2 , ∗and Qing Ma 1 , ∗
+1 Shenzhen Key 
+Laboratory of 
+Synthetic Genomics, 
+Guangdong Provincial 
+Key Laboratory of 
+Synthetic Genomics, 
+Key Laboratory of 
+Quantitative Synthetic 
+Biology, Shenzhen 
+Institute of Synthetic 
+Biology, Shenzhen 
+Institute of Advanced 
+Technology, Chinese 
+Academy of Sciences, 
+Shenzhen 518055, 
+China; 2 State Key 
+Laboratory of 
+Biocontrol, School of 
+Life Sciences, Sun 
+Yat-Sen University, 
+Guangzhou 510275, 
+China and 
+3 Department of Cell 
+Biology, Johns 
+Hopkins University 
+School of Medicine, 
+Baltimore, MD 21205, 
+USA 
+∗Corresponding 
+authors. E-mails: 
+qing.ma@siat.ac.cn; 
+xujin7@mail.sysu.edu.cn
+† Equally contributed 
+to this work. 
+Received 8 May 
+2024; Revised 8 June 
+2024; Accepted 9 
+June 2024 
+ABSTRACT 
+In adult gonads, disruption of somatic sexual identity leads to defective gametogenesis and infertility. 
+However, the underlying mechanisms by which somatic signals regulate germline cells to achieve proper 
+gametogenesis remain unclear. In our previous study, we introduced the chinmoSex Transformation ( chinmoST ) 
+mutant Drosophila testis phenotype as a valuable model for investigating the mechanisms underlying sex 
+maintenance. In chinmoST testes, depletion of the Janus Kinase-Signal Transducer and Activator of 
+Transcription downstream effector Chinmo from somatic cyst stem cells (CySCs) feminizes somatic cyst 
+cells and arrests germline differentiation. Here, we use single-cell RNA sequencing to uncover 
+chinmoST -specific cell populations and their transcriptomic changes during sex transformation. Comparative 
+analysis of intercellular communication networks between wild-type and chinmoST testes revealed 
+disruptions in several soma-germline signaling pathways in chinmoST testes. Notably, the insulin signaling 
+pathway exhibited significant enhancement in germline stem cells (GSCs). Chinmo cleavage under targets 
+and tagmentation (CUT&Tag) assay revealed that Chinmo directly regulates two male sex determination 
+factors, doublesex ( dsx ) and fruitless ( fru ), as well as Ecdysone-inducible gene L2 ( ImpL2 ), a negative regulator 
+of the insulin signaling pathway. Further genetic manipulations confirmed that the impaired gametogenesis 
+observed in chinmoST testes was partly contributed by dysregulation of the insulin signaling pathway. In 
+summary, our study demonstrates that somatic sex maintenance promotes normal spermatogenesis through 
+Chinmo-mediated conserved sex determination and the insulin signaling pathway. Our work offers new 
+insights into the complex mechanisms of somatic stem cell sex maintenance and soma-germline 
+communication at the single-cell level. Additionally, our discoveries highlight the potential significance of 
+stem cell sex instability as a novel mechanism contributing to testicular tumorigenesis. 
+Keywords: Drosophila testis, somatic stem cell sex conversion, single-cell sequencing, soma-germline 
+communication, insulin signaling 
+INTRODUCTION 
+The production of distinct male and female ga- 
+metes is crucial for sexual reproduction. Although 
+significant emphasis is placed on germ cells, somatic 
+gonadal cells also play an indispensable role in en- 
+suring proper gametogenesis [1 ,2 ]. In Drosophila go- 
+nads, somatic-germline sex mismatch experiments 
+have revealed that somatic sexual identity is pivotal 
+for normal differentiation and sex determination 
+of germline cells during embryonic development 
+[1 –3 ]. Germline sex determination is influenced 
+by signaling from the surrounding somatic cells. 
+One critical signaling pathway involved in this non- 
+autonomous regulation is the Janus Kinase-Signal 
+Transducer and Activator of Transcription ( JAK- 
+STAT) pathway [4 ]. In many organisms, cellular 
+sex identity, established during embryonic develop- 
+ment, was thought to be unalterable; however, re- 
+cent work challenges this notion by revealing that 
+somatic sexual identity can be transdifferentiated in 
+adult gonads [5 –11 ]. This suggests that somatic sex- 
+ual identity is actively maintained during adulthood 
+or the postnatal period. Disruption of this main- 
+tenance can also lead to defective gametogenesis 
+and infertility. For instance, in adult mice, sexual 
+©TheAuthor(s)2024.PublishedbyOxfordUniversityPressonbehalfofChinaSciencePublishing&MediaLtd.ThisisanOpenAccessarticledistribute dunderthetermsoftheCreative
+CommonsAttributionLicense( https://creativecommons.org/licenses/by/4.0/), which permits unrestricted reuse, distribution, and reproduction in any medium, provided the original 
+work is properly cited. 
+Natl Sci Rev,2024,Vol.11,nwae215
+transformation of the Sertoli cells through con- 
+ditional loss of Doublesex (Dsx)/Mab-3-Related 
+Transcription Factor 1 (DMRT1) results in femi- 
+nized germ cel ls [6 ]. Simi larly, in adult Drosophila 
+gonads, sexual transformation of somatic stem cells 
+leads to the formation of tumorous mitotic germline 
+[9 –11 ]. Nevertheless, despite the significant ad- 
+vances in understanding sex determination mecha- 
+nisms and the influence of somatic sexual identity 
+on germ cells during embryonic development, the 
+molecular mechanisms underlying the maintenance 
+of sexual identity in adulthood and the associated 
+signals between somatic cells and germ cells remain 
+largely unexplored. 
+We initially reported a mutant Drosophila testis 
+phenotype where CySCs undergo sex conver- 
+sion in adulthood, offering an excellent model to 
+investigate the soma-germline communication in- 
+volved in somatic sex maintenance [11 ]. Previous 
+genetic complementation and rescue experiments 
+have elucidated the pivotal role of chronologically 
+inappropriate morphogenesis (Chinmo), a key 
+effector of the JAK-STAT signaling pathway, in the 
+manifestation of this mutant phenotype [11 ]. A 
+presumed regulatory mutation in chinmo specifically 
+eliminates the expression of Chinmo only in CySCs 
+and their progeny, resulting in their feminization. 
+Consequently, we denoted this loss-of-function 
+allele as chinmoSex Transformation or chinmoST . The 
+precise genetic lesion in chinmoST is unknown. 
+Importantly, RNAi knockdown of chinmo in the 
+CySC lineage phenocopies chinmoST albeit with 
+lower penetrance and a later phenotypic onset 
+[11 ]. Therefore, we use chinmoST in the current 
+study. Previously, we morphologically characterized 
+the feminized somatic cyst cells and validated our 
+findings using the few available sex-specific somatic 
+cell markers such as Dsx, the fly homologue of the 
+crucial human male determination factor DMRT1. 
+However, the lineage trajectory of these progres- 
+sively transdifferentiating CySCs and genome-wide 
+transcriptomic profiles of different somatic and 
+germ cells remain unknown. Furthermore, whether 
+and how the Chinmo-induced sexually transformed 
+CySCs communicate with the germline is poorly 
+understood. 
+In this study, we use a time series of single-cell 
+RNA-sequencing (scRNA-seq) to characterize the 
+transcriptional profiles for wild-type and chinmoST 
+testes. We identified chinmoST -specific cell popula- 
+tions and transcriptomic changes corresponding to 
+the phenotype. By comparing intercellular commu- 
+nication networks between wild-type and chinmoST 
+testes, we discovered disruptions in several soma- 
+germline signaling pathways, including the insulin 
+signaling pathway, in chinmoST testes. Using the 
+Chinmo CUT&Tag (cleavage under targets and tag- 
+mentation) assay, we found that some sex deter- 
+mination factors and insulin pathway components 
+are directly regulated by Chinmo. Altogether, our 
+study demonstrates that somatic sex maintenance 
+promotes normal spermatogenesis, which is medi- 
+ated by both conserved sex determination factors 
+and the insulin signaling pathway. 
+RESULTS 
+Single-cell-resolution gene expression 
+and cellular heterogeneity in the testis 
+In chinmoST mutants, adult testes initially appear nor- 
+mal but progressively undergo somatic lineage fem- 
+inization with age: squamous cyst cells transform 
+into columnar epithelial cells resembling ovarian so- 
+matic follicle cells [11 ]. In addition, the germ cells 
+in 7- to 9-day-old chinmoST testes appear to arrest 
+as early male germ cells (spermatogonia), resulting 
+in overproliferation of mitotic germ cells [8 ,9 ,11 ] 
+(Fig. 1 A′ –A′ ′ ′ ′ , Fig.S1A). To inves ti gate the seque n- 
+tial molecular changes across different cell types 
+during the progression of the sex conversion phe- 
+notype in chinmoST testes, we performed scRNA- 
+seq on wild-type and chinmoST testes across three 
+time points (3–5, 6–8 and 9–11 days of adulthood) 
+w hich yielded 26 5 49 high-quality cells (Fig. 1 A′ –
+A′ ′ ′ ′ , Fig. S1C). In combination with unsupervised 
+clustering analysis and previous knowledge of cell- 
+type-specific marker genes [12 –14 ], we identified 
+17 cell populations, including 11 somatic cell types 
+and 6 germline cell types (Fig. 1 B and C, Figs S1D
+and S2A–J, SupplementaryTableS1 ). Furthermore, 
+the alignment of our annotated cell types with those 
+from the Fly Cell Atlas testis study [13 ] substanti- 
+ates the consistency of cell-type classification across 
+independent studies ( Fig. S1E). As expected, the 
+number of differentially expressed genes (DEGs) in- 
+creases over time in chinmoST testes compared to 
+wild-type testes ( Fig.S3A). This pattern aligns with 
+the observed distal expansion of mutant somatic and 
+germ cells with age [11 ] ( Fig.S1C). 
+To compare the cell-type-specific gene expres- 
+sion patterns of chinmoST and wild-type testes, we 
+first analyzed the few known genes with predictable 
+changes. We found that chinmo expression decreases 
+dramatically in the CySC lineage and slightly in- 
+creases over time in early germ cells in chinmoST 
+testes, as expected (Fig. 1 D, Fig. S3Band D). This 
+result is corroborated by Chinmo protein levels 
+as assayed by immunostaining (Fig. 1 E) [8 ,9 ,11 ]. 
+Similarly, the somatic membrane adhesion marker 
+Fasciclin 3 ( Fas3 ) is sequentially upregulated in 
+the CySC lineage over time as expected [8 ,9 ,11 ] 
+Page2of16
+Natl Sci Rev,2024,Vol.11,nwae215
+Vasa, Chinmo, Dapi
+Wild-type testis 1-2 day old chinmoST testis 9-11 day old chinmoST testis
+−1 0 1 2
+Scaled average expression
+Late spermatids
+Early spermatids
+Late spermatocytes
+Intermediate spermatocytes
+Early spermatocytes
+GSCs/spermatogonia
+aub
+zpg
+vas
+nos
+stg
+bam
+Rbp4
+kmg
+wuc
+nht
+T af12L
+twe
+CycB
+fzo
+CG3927
+GstD9
+bol
+Dpy−30L2
+schuy
+hale
+boly
+whip
+p−cup
+wa−cup
+r−cup
+d−cup
+sa
+Percent expressed
+02 5 5 0 7 5
+Muscle cells
+Hemocytes
+Pigment cells
+Male gonad associated epithelium
+Somatic cells at base of testis
+Terminal epithelial cells
+Late cyst cells
+Intermediate cyst cells
+Early cyst cells
+CySCs
+Hub cells
+org−1
+Fas3
+ptc
+piwi
+tj
+stg
+Wnt4
+CG31676
+Pdcd4
+Six4
+sog
+CG3376
+Nep2
+Nep4
+mnd
+Ubx
+CG18628
+MtnA
+glob1
+CG2233
+Ppn
+Hml
+Mp20
+Zasp66
+CG8665
+Hub cells
+Intermediate 
+cyst cells
+Late cyst cells
+Terminal epithelium
+Male gonad 
+associated 
+epithelium
+Hemocytes Muscle cells
+GSCs/spermatogonia
+Early spermatocytes
+Late spermatids
+Late spermatocytes
+Intermediate spermatocytes
+Early spermatids
+Somatic cells at base of testis
+Early cyst cells
+UMAP 1UMAP 2
+Pigment cells
+CySCs
+CD
+B
+0
+1.3
+2
+>=3
+Fas3
+chinmo
+tra
+Sxl
+fl(2)d
+vir
+fru
+dsx
+Hub cells
+CySCs
+Early cyst cells
+Intermediate cyst cells
+Late cyst cells
+GSCs/spermatogonia
+Early spermatocytes
+Late spermatocytes
+Early spermatids
+Late spermatids
+−1.0
+−0.5
+0.0
+0.5
+1.0
+log2 FC
+−log10 (P_value)
+Intermediate spermatocytes
+chinmoST vs. wild-type log2 (FC)
+KnownSex determination
+E
+Hub cells
+CySCs
+Cyst cells
+Male GSCs
+Male germ cells
+Spermatids
+FSC-like cells
+Follicle like cells
+Follicle stem cells (FSCs)
+Female GSCs
+Female germ cells
+Stalk cells
+Follicle cells
+Polar cells
+Wild-type testis Wild-type ovary
+chinmoST testis chinmoST testis
+A’ A’’
+A’’’ A’’’’
+2-3 day old ≥ 9 day old
+Figure 1. Identification and annotation of testis cell types by single-cell RNA-seq. (A′ –A′ ′ ′ ′ ) Illustrations of a wild-type testis (A′ ), wild-type ovary 
+(A′ ′ ), 2–3-day-old chinmoST testis (A′ ′ ′ ) and an older chinmoST testis (A′ ′ ′ ′ ). Apex of testis or ovary, red box. Within the wild-type testis apex, 8–15 
+hub cells and the surrounding stem cells constitute the male stem cell niche, producing signals that support both germline stem cells (GSCs) and 
+somatic cyst stem cells (CySCs) for self-renewal and differentiation [45 ] (A′ ). GSCs undergo oriented mitotic divisions to produce the gonialblast (Gb) 
+[46 ], 2-, 4-, 8- and 16-cell spermatogonial cysts. Each 16-cell cyst undergoes meiosis to generate mature spermatids [47 ]. GSCs are supported by 
+CySCs. Each Gb is ensheathed by two differentiating squamous cyst cells, which both exit the cell cycle and continue increasing in size to support 
+germ cells throughout spermatogenesis [48 ,49 ]. In the young chinmoST testis (A′ ′ ′ ), CySCs and their early progeny lose male fate and adopt a follicle 
+stem cell/progenitor-like cell identity. As flies age, Fas3-positive follicle stem cell/progenitor-like cells produce follicle-like cells, gradually displacing 
+normal cyst cells from the niche. Germ cells, restricted to the testis lumen, overproliferate and arrest as spermatogonia, resulting in overproliferation 
+of mitotic germ cells (DAPI-bright and BrdU/EdU-positive, with 1B1-positive spherical or short branching fusomes) [9 ,11 ,24 ,50 ] when the germline and 
+somatic sex are mismatched. (B) Uniform manifold approximation and projection (UMAP) plot of the integrated scRNA-seq data set from the wild-type 
+and chinmoST adult testis scRNA-seq data sets with cell type annotations. (C) Dot plot showing scaled average expression of marker genes for somatic 
+(upper plot) and germline (lower plot) cell types. (D) Dot plot showing chinmoST versus wild-type cell-type-specific differential expression patterns for 
+known gene markers and sex determination factors. (E) Chinmo staining at the apex of the testes of wild-type testis, and young and old chinmoST 
+testis. Vasa marks germline cells. DAPI marks nuclei. Dotted lines mark hub cells. Arrowheads mark somatic cyst cells. Hollow arrowheads mark GSCs. 
+Scale bars = 20 μm. WT, wild-type. 
+(Fig. 1 D, Fig. S3C). We next analyzed DEGs in- 
+volved in the canonical sex determination pathway. 
+As expected, expression of the male-specific sex de- 
+termination factors doublesex ( dsx ) and fruitless ( fru ) 
+is downregulated [9 ,11 ], while expression of the 
+female-specific sex determination regulator female 
+lethal d ( fl(2)d ) [9 ] and transformer ( tra ) [3 ,9 ,15 ] is 
+upregulated, in chinmoST CySCs (Fig. 1 D). 
+Taken together, our single-cell data are con- 
+sistent with previous observations that Chinmo 
+Page3of16
+Natl Sci Rev,2024,Vol.11,nwae215
+partially functions through the canonical sex deter- 
+mination pathway to promote the male identity of 
+CySCs [9 ,11 ]. These findings serve as a founda- 
+tion for investigating the molecular mechanisms un- 
+derlying somatic CySCs feminization and germ cell 
+tumorigenesis. 
+Single-cell RNA-seq reveals 
+transcriptomic changes in 
+mutant-specific somatic cell populations 
+We next focused on transcriptomic changes in the so- 
+matic cyst lineage over time, which undergoes pro- 
+gressive feminization in chinmoST testes. To get a bet- 
+ter resolution of cellular differences, we selected hub 
+cells, CySCs, early cyst cells (ECCs) and intermedi- 
+ate cyst cells (ICCs) for further subclustering anal- 
+ysis ( Fig. S4A–D, see ‘Methods’), which yielded 13 
+clusters (Fig. 2 A, Fig.S4C and D). 
+Among these 13 clusters, we found that cluster 2 
+and cluster 9 were largely contributed by chinmoST 
+testes (Fig. 2 A and B). Furthermore, these two clus- 
+ters exhibited more overal l simi larities to wi ld-type 
+ovarian somatic cells [16 ] than to wild-type testes 
+( Fig. S4E and F). Notably, the pseudobulk tran- 
+scriptomes of cluster 2 had a higher global similar- 
+it y to wild-t ype ovarian follicle stem cells (FSCs) 
+(with a correlation coefficient of 0.97) than to wild- 
+type CySCs (with a correlation coefficient of 0.93) 
+( Fig. S4F). Therefore, we concluded that clusters 
+2 and 9 represent feminized CySCs and a mutant- 
+specific cyst cell population, respectively, which we 
+refer to as C2-CySCs and C9-ICCs1. Comparison 
+of DEGs between chinmoST C2-CySCs and wild- 
+type CySCs to genes expressed in wild-type FSCs re- 
+vealed that most DEGs (74.5%) in chinmoST CySCs 
+trended toward female expression patterns ( Fig.S5). 
+Only 25.5% of DEGs are differentially expressed 
+compared to wild-type female cells ( Fig.S5). These 
+results indicate that chinmoST C2-CySCs and cluster- 
+9 cyst cells indeed exhibit clear signs of feminization 
+( FigsS4E and F, S5). 
+We next examined the molecular features of the 
+two feminized chinmoST -specific clusters, C2-CySCs 
+and C9-ICCs1, by differential expression analysis 
+(Fig. 2 C and D, Fig. S4G). As the chinmoST phe- 
+notype progresses, these clusters exhibit sequential 
+transcriptomic changes (Fig. 2 F, Fig. S3A–C, E–
+G). With time, the number of up- and downreg- 
+ulated DEGs increases in C2-CySCs compared to 
+their counterparts from wild-type testes ( Fig. S3A). 
+Similarly, the number of upregulated DEGs increases 
+in C2-CySCs’ descendants, while the number of 
+downregulated DEGs initially increases and then 
+decreases with time ( Fig. S3A). Specifically, C2- 
+CySCs and the chinmoST -specific C9-ICCs1 share 
+similar transcriptomic changes including the down- 
+regulation of mitochondrial functions and the pro- 
+gressive upregulation of ovarian fol licle cel l mark- 
+ers such as Tissue inhibitor of metalloproteases ( Timp ) 
+and Activity-regulated cytoskeleton associated protein 1 
+( Arc1 ) [16 ] (Fig. 2 C, D and F). Also, the chinmoST 
+C2-CySCs show significant upregulation of follicle 
+stem cell markers such as CG4250 [16 ] (Fig. 2 C, 
+D and F). Functional enrichment of DEGs indi- 
+cated that chinmoST C2-CySCs are highly primed 
+for cellular proliferation and intercellular commu- 
+nications, potentially contributing to the formation 
+of actively dividing follicle-like cells and disturbed 
+germ cells (Fig. 2 D). On the other hand, chinmoST 
+C9-ICCs1 shows specific upregulation in lysosome 
+activity, vesicle-mediated transport and cytoskele- 
+tal activity, along with a specific downregulation in 
+spermatid differentiation ( Fig.S4G–I), which is con- 
+sistent with the identity of these cells as a mitoti- 
+cally active epithelial monolayer that loses its capac- 
+ity to support germ cell development. Examples of 
+representative upregulated genes include the actin 
+monomer binding protein chickadee ( chic ), the vesi- 
+cle trafficking regulator Rab7 , and the cel l ad he- 
+sion factor Matrix metalloproteinase 1 ( Mmp1 ) [16 ] 
+(Fig. 2 F, Fig. S4G). Conversely, the late cyst cell 
+protein α-Tubulin at 85E ( αTub85E ), which marks 
+late cyst cells supporting developing spermatid cysts 
+[17 ], and the sperm DNA condensation factor Male- 
+specific transcript 77F ( Mst77F ) [18 ] are both down- 
+regulated ( Fig. S4G). These results suggest that 
+chinmoST C9-ICCs1 are sex-transformed cyst cells 
+resembling differentiated follicle cells, and that their 
+molecular changes could affect normal spermatid de- 
+velopment. Furthermore, we conducted a thorough 
+comparison of each annotated cyst cell population 
+with the sorted bulk mutant cyst cells [8 ] and found 
+substantial overlaps in DEGs across most popula- 
+tions ( Fig. S6). However, we observed an excep- 
+tion in the CySC population, which might be under- 
+re pre sented in the sorted cells analyzed by Grmai 
+et al. 2021. 
+In summary, chinmoST testes feature a distinct in- 
+crease in ovarian follicle-like cells that we confirmed 
+and profiled by scRNA-seq. There are two major 
+chinmoST -specific somatic cyst cell subpopulations: 
+(i) 1%–2% of chinmoST CySCs that resemble follicle 
+stem cells, (ii) the collection of feminized somatic 
+cells that likely originate from the feminized CySCs 
+and morphologically resemble epithelial follicle-like 
+cells [8 ,9 ,11 ]. Multiple biological processes accom- 
+pany the sex conversion of CySCs and the formation 
+of their follicle-like progeny, such as stem cell prolif- 
+eration, ribosome assembly, vesicle-mediated trans- 
+port and metabolic changes. 
+Page4of16
+Natl Sci Rev,2024,Vol.11,nwae215
+Figure 2. scRNA-seq of wild-type and chinmoST mutant testes reveals mutant-specific somatic transcriptomic changes. 
+(A) Time series UMAP plots of hub cells, CySCs, and early and intermediate cyst cells for wild-type and chinmoST testes, 
+which consist of 13 clusters. Dotted lines mark CySCs and C9-ICCs1, respectively. (B) Bar plot showing the percentage of 
+chinmoST and wild-type cells in each of the 13 somatic clusters over time. (C) Volcano plot of DEGs between chinmoST and 
+wild-type CySCs. Genes with Wilcoxon rank sum test P value < 0.05 and absolute value of fold change ≥ 1.5 are considered 
+as DEGs, while others are considered non-significant DEGs. (D) Table showing top GO or KEGG terms (one-sided Fisher’s exact 
+test with Benjamini-Hochberg correction, adjusted P value < 0.05) enriched for up- and downregulated DEGs in chinmoST 
+versus wild-type CySCs (Wilcoxon rank sum test P value < 0.05, absolute value of fold change ≥ 1.5), respectively. (E) Scatter 
+plot showing chinmoST versus wild-type log2 fold change of gene expression in C2-CySCs (x-axis) and C9-ICCs1 (y-axis). (F) Vi- 
+olin plots showing expression of Timp , Arc1 , CG4250 , mamo , chic and Rab7 in C2-CySCs and C9-ICCs1 over time. Differential 
+expression analysis is performed by Wilcoxon rank sum test (*, P < 0.05; **, P < 0.01; ****, P < 0.0001; ns, non-significant). 
+Page5of16
+Natl Sci Rev,2024,Vol.11,nwae215
+Germline stem cells/spermatogonia and 
+early spermatocytes encysted by mutant 
+soma show confused sexual identity 
+In Drosophila gonads, manipulated somatic sexual 
+microenvironments can influence the sexual cell fate 
+stability of germ cells [19 –21 ]. In chinmoST testes, 
+germ cells overproliferate and arrest as early male 
+germ cells (spermatogonia), as indicated by their 
+morphology and expression of the male-specific 
+early germ cell marker M5-4 [8 ,9 ,11 ]. Therefore, we 
+next turned our attention to the germline lineage 
+to investigate the molecular features of arrested 
+germ cel ls whi le neighboring somatic cells become 
+feminized. 
+Six major germ cell types were subset for 
+further analysis, including germline stem cells 
+(GSCs)/spermatogonia, early spermatocytes, in- 
+termediate spermatocytes, late spermatocytes, 
+early spermatids and late spermatids (Fig. 3 A, 
+Fig. S7A and B). Two subpopulations are spe- 
+cific to chinmoST testes, which were annotated 
+as GSCs/spermatogonia and early spermato- 
+cytes, respectively (Fig. 3 A). Correspondingly, 
+the percentage of GSCs/spermatogonia and early 
+spermatocytes increased substantially in chinmoST 
+testes (Fig. 3 B). The number of cells in these two 
+cell types also increased progressively with age in 
+chinmoST testes (Fig. 3 B). In contrast, the proportion 
+of late-stage germ cell types, such as early and late 
+spermatids, decreased with time in chinmoST testes. 
+These findings are consistent with prior phenotypic 
+observations that GSCs/spermatogonia in chinmoST 
+testes proliferate substantially and their descendant 
+spermatogonia-to-spermatocyte-transition cells are 
+arrested at an early stage and unable to differentiate 
+into mature sperm cells [8 ,9 ,11 ]. 
+To investigate the sexual identity of the germ cell 
+lineage in chinmoST testes, we compared transcrip- 
+tomes for all the germ cells among chinmoST testes, 
+wild-type testes and ovaries [13 ], both at the ag- 
+gregate and cell-type levels ( Fig. S7Cand D, see 
+‘Methods’). Globally, as the chinmoST phenotype 
+progresses, the RNA profiles in chinmoST germ cells 
+show sequential transcriptomic changes that resem- 
+ble wild-type ovarian germ cells ( Fig.S7C). Changes 
+are not uniform across the germline lineage. For 
+example, chinmoST GSCs/spermatogonia are more 
+simi lar to wi ld-type GSCs/spermatogonia than to 
+ovarian germ cells (Fig. 3 C, Fig. S7D). By contrast, 
+chinmoST early spermatocytes display increased sim- 
+ilarity with those of the ovarian germline (Fig. 3 C, 
+Fig. S7D). This suggests that a potential sex tran- 
+sition point is likely from spermatogonia to early 
+spermatocytes during the process of sex conversion. 
+We also found heterogeneity within early spermato- 
+cytes, depicting a ‘mosaic’ pattern of sex conversion 
+( Fig. S8Aand B). We further performed trajectory 
+analysis of wild-type and chinmoST germ cells (see 
+‘Methods’) to track their dynamics. RNA velocity 
+results revealed that chinmoST GSCs/spermatogonia 
+experience dramatic transcriptional changes, while 
+chinmoST early spermatocytes sustain small tran- 
+scriptional changes and fail to differentiate into ma- 
+ture spermatocytes ( Fig.S7E). Conventional trajec- 
+tory inference revealed that along the inferred tra- 
+jectory of germ cells, 3767 DEGs are dynamically 
+expressed in chinmoST testes, with the majority of 
+these DEGs being strongly upregulated during the 
+development process from GSCs/spermatogonia to 
+early spermatocytes (Fig. 3 D, Fig. S7F). This indi- 
+cates that transcriptomic changes in chinmoST germ 
+cells are initiated and take effect at a very early stage, 
+likely within the GSCs. 
+To further examine the molecular features of 
+mutant GSCs/spermatogonia and early sperma- 
+tocytes, we next performed differential expression 
+analysis (Fig. 3 E and F, Fig. S7G–J). In chinmoST 
+GSCs/spermatogonia, the expression patterns of 
+genes involved in spermatogenesis like PFTAIRE- 
+interacting factor 1A ( Pif1a ) [22 ], aubergine ( aub ) 
+and boule ( bol ) [13 ,23 ] ( Fig.S9A–C), are consistent 
+with the previously reported male-specific M5-4 
+(Esg) expression in chinmoST GSCs/spermatogonia 
+[11 ]. In chinmoST GSCs/spermatogonia, there are 
+302 upregulated genes enriched in multiple signal- 
+ing pathways, such as Wnt, Foxo and Transforming 
+Growth Factor- β(TGF- β) pathways (Fig. 3 E). This 
+indicated that soma-germline interactions might 
+be disrupted due to the feminization of somatic 
+cyst cells in chinmoST testes. Interestingly, we also 
+observed a progressive upregulation of a few genes 
+associated with oocyte differentiation, such as 
+shavenbaby ( ovo ) [1 ], ovarian tumor ( otu ) [1 ] 
+and Heterogeneous nuclear ribonucleoprotein at 
+27C ( Hrb27C ) [16 ] over time in chinmoST 
+GSCs/spermatogonia (Fig. 3 E and F). Notably, 
+the expression levels of ovo and otu in chinmoST 
+GSCs/spermatogonia fall in between wild- 
+type male and female germ cells ( Fig. S9D and 
+E). The 556 genes downregulated in chinmoST 
+GSCs/spermatogonia are enriched in mitochon- 
+drial translation and male gamete generation, 
+suggesting that the cellular energetic flow is unbal- 
+anced, and that normal spermatogenesis may be 
+transcriptionally restricted (Fig. 3 E). 
+In chinmoST early spermatocytes, genes such as 
+male germline marker PHD finger protein 7 ( Phf7 ) 
+[3 ,24 ] retain wild-type male expression ( Fig. S9F), 
+while 120 genes enriched in ribosomal activity and 
+translation elongation are upregulated ( Fig.S7Hand 
+I). We observed a progressive upregulation of a few 
+Page6of16
+Natl Sci Rev,2024,Vol.11,nwae215
+−10 −5 0 5
+UMAP_1
+GSCs/spermatogonia Early spermatocytes Intermediate spermatocytes
+Late spermatocytes Early spermatids Late spermatids
+−4
+0
+4UMAP_2
+−10 −5 0 5−10 −5 0 5
+−4
+0
+4
+Wild-type 3-5D Wild-type 6-8D Wild-type 9-11D
+chinmoST 3-5D chinmoST 6-8D chinmoST 9-11D
+Top GO/KEGG terms P value Gene
+Negative regulation of transcription
+Gene silence
+Oocyte differentiation
+Cell-cell signaling by Wnt
+TGF-beta signaling pathway
+Mitochondrial translation
+Male gamete generation
+Proteasome complex
+Up-regulated
+(302)
+Down-
+regulated
+(556)
+chinmoST vs. wild-type GSCs/spermatogonia
+Dsp1, kis
+Cp190
+Hrb27C
+gro, arm
+Smox, Myc
+mRpS9
+Soti, wuc
+Prosbeta7
+4.72E
+-17
+0.001
+0.001
+5.64E
+-08
+3.50E
+-12
+1.87E
+-28
+1.06E
+-04
+4.67E
+-21
+Foxo signaling pathway
+1.08E
+-09
+Hrb27C, InR
+chinmoST Wild-type
+Hub
+Hub
+GSC Gonialblasts Spermatogonial cells
+CySCs
+Cyst cells
+Follicle-stem-cell-like cells
+Follicle-like cells
+GSCs
+chinmoST GSCs/spermatogonia
+Sexually confused spermatogonia-
+to-spermatocyte-transition cells
+Germ cells
+Hub cells
+0.00
+0.50
+1.00
+0 5 10 15
+Density 0 5 10 15
+Expression
+0
+0.2
+0.4
+0.6
+0.8
+1
+GSCs/Sg.
+Early Sp.
+Int. Sp.
+Late Sp.
+Wild-type testis germline chinmoST testis germline
+0
+25
+50
+75
+100
+.gS/sCSG
+.pSylraE
+.pS.tnI
+Late Sp.
+.dSylraE
+.dSetaL
+Wild-type 3-5D
+Wild-type 6-8D
+Wild-type 9-11D
+chinmoST 3-5D
+chinmoST 6-8D
+chinmoST 9-11D
+0
+0.25
+0.5
+0.75
+1Wild-type
+GSCs/Sg.
+GSCs/spermatogonia
+Germarium region 2a-2b
+Young germ cell
+Early spermatocytes
+chinmoST
+GSCs/Sg.
+Wild-type
+early Sp.
+chinmoST
+early Sp.
+Wild-type testis Wild-type ovary
+Percentage ( % )
+°
+°°
+°
+°
+°
+°
+°
+°°
+°
+°
+°°
+°
+°
+°
+°
+°
+°°°
+°
+°
+°
+°
+°
+°
+°
+°°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°°
+°
+°°
+°
+°
+°°°
+°°
+°
+°
+°
+°°
+°
+°
+°
+°
+°
+°
+°
+°°
+°°°
+°
+°
+°°
+°
+°
+°°
+°
+°°°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°°°
+°
+°
+°
+°
+°
+°
+°
+°°
+°°
+°
+°
+°
+°
+°
+°
+°°
+°
+°
+°
+°
+°
+°
+°°
+°°
+°
+°
+°
+°°
+°
+°
+°°
+°
+°
+°
+°°
+°
+°
+°
+°
+°
+°°
+°°
+°
+°°
+°
+°
+°
+°
+°
+°
+°°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°°°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°°
+°
+°
+°
+°°
+°
+°°
+°
+°
+°
+°
+°°
+°
+°
+°
+°
+°
+°°
+°
+°
+°°
+°°
+°
+°°
+°°
+°
+°
+°°°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°°
+Expression level
+wuc
+°
+°
+°
+°
+°
+°°
+°
+°
+°
+°
+°°°°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°°
+°
+°
+°
+°
+°
+°°
+°
+°
+°°
+°
+°
+°
+°
+°
+°
+°°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°°
+°
+°
+°
+°
+°°°
+°
+°
+0
+1
+2
+3
+ovo
+°
+°
+°°
+°
+°
+°°°
+°
+°
+°
+°°
+°
+°°
+°
+°
+°
+°°
+°
+°
+°
+°
+°
+°
+°°
+°°°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°°
+°
+°
+°
+°°°
+°
+°°
+°
+°°°°°°
+°
+°°
+°
+°
+°
+°
+°
+°
+°
+0
+1
+2
+otu
+°
+°
+°
+° °°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°
+°
+°
+°
+°°
+°
+°°°°
+°
+°
+°
+0
+1
+2
+3
+4 eIF4A
+*
+0
+1
+2
+3
+GSCs/spermatogoniaEarly spermatocytes
+° °°
+°
+°°
+°
+°°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+0
+2
+4
+Hrb27C
+0
+1
+2
+3
+0
+1
+2
+0
+2
+4
+0
+1
+2
+3
+4
+0
+1
+2
+3
+3-5D
+6-8D
+9-11D
+chinmoST
+Wild-type
+3-5D
+6-8D
+9-11D
+chinmoSTWild-type chinmoSTWild-type chinmoSTWild-type chinmoSTWild-type chinmoSTWild-type
+nsns
+ns
+DE
+F
+G
+AB C
+Figure 3. scRNA-seq reveals mutant-specific germline cell populations and molecular changes. (A) Time series UMAP 
+plots of wild-type and chinmoST germline cells. Cells are colored by cell types. Dotted lines mark chinmoST -specific 
+GSCs/spermatogonia and early spermatocytes, respectively. (B) Bar plot showing percentage of each sample in different 
+germline cell types. (C) Pie charts showing Pearson correlation coefficients of pseudobulk transcriptomes between wild- 
+type/ chinmoST testis GSCs/spermatogonia and early germ cells from wild-type testes/ovaries (top), and between wild- 
+type/ chinmoST early spermatocytes and early germ cells from wild-type testes/ovaries (bottom). (D) Heatmap showing the 
+smoothed expression patterns of DEGs (Wald test with Benjamini-Hochberg correction, adjusted P value < 0.05, absolute 
+value of fold change > 1) between chinmoST and wild-type testes along the trajectory from GSCs to late spermatocytes 
+(bottom), together with the smoothed proportions of annotated cells along the trajectory (top). (E) Table showing top GO or 
+KEGG terms (one-sided Fisher’s exact test with Benjamini-Hochberg correction, adjusted P value < 0.05) enriched for up- and 
+downregulated DEGs in chinmoST versus wild-type GSCs/spermatogonia (Wilcoxon rank sum test P value < 0.05, absolute 
+value of fold change ≥1.5), respectively. (F) Violin plots showing expression of ovo , otu , Hrb27C , elF4A and wuc in early testes 
+germ cells over time. Differential expression analysis is performed by Wilcoxon rank sum test (*, P < 0.05; **, P < 0.01; 
+****, P < 0.0001; ns, non-significant). (G) Working model of how germ cells respond to adjacent sex-converted CySCs and 
+their descendant follicle-like cells mediated by loss of Chinmo. WT, wild-type. Sg, spermatogonia. Sp, spermatocytes. Sd, 
+spermatids. Int, intermediate. 
+Page7of16
+Natl Sci Rev,2024,Vol.11,nwae215
+genes involved in oocyte differentiation such as eu- 
+karyotic translation initiation factor 4A ( eIF4A ) [25 ] 
+and stubarista ( sta ) [16 ] (Fig. 3 F, Fig. S7G). Fifty- 
+seven genes are downregulated in chinmoST early 
+spermatocytes and enriched in mRNA processing 
+and spermatogenesis ( Fig. S7Hand J). Moreover, 
+one of the testis-specific meiotic arrest complex core 
+components and human LIN52 paralog Wake-up- 
+call ( wuc ) [26 ] is downregulated in chinmoST early 
+germ cells (Fig. 3 E and F). The absence of wuc ex- 
+pression may cause defects in the activation of gene 
+expression in primary spermatocytes [26 ]. This is 
+consistent with the chinmoST phenotype exhibiting 
+extensive proliferation of small cells resembling un- 
+differentiated germ cells and a lack of mature germ 
+cells [8 ,9 ,11 ]. 
+Taken together, our results uncover the char- 
+acteristics of mutant-specific GSCs/spermatogonia 
+and early spermatocytes in chinmoST testes. Al- 
+though the surrounding CySCs exhibit feminization, 
+the chinmoST GSCs maintain their male-sex iden- 
+tity to a large extent and undergo overproliferation. 
+On the other hand, the descendant mutant-specific 
+spermatogonia-to-spermatocyte-transition cell pop- 
+ulation adopts a confused sexual fate and is unable 
+to differentiate properly into late-stage germ cells 
+(Fig. 3 G). 
+Soma-germline communication networks 
+suggest that insulin signaling may 
+contribute to the chinmoST phenotype 
+Interactions between the soma and germline are es- 
+sential throughout gametogenesis. Notably, approx- 
+imately one-third of fly genes associated with male 
+sterility in Flybase [27 ] show high expression specif- 
+ically in somatic cyst cells of wild-type testes, with 
+a significant enrichment in CySCs ( Fig.S10A). This 
+suggests the indispensable role of soma in germline 
+development. To investigate how soma-germline in- 
+teractions change as the feminization of somatic 
+cyst cells in chinmoST testes progresses, we next per- 
+formed intercellular communication analysis across 
+wild-type and chinmoST testes. 
+To comprehensively characterize the interactions 
+between somatic cyst cells and germ cells in testes, 
+we first manually curated a comprehensive signal- 
+ing molecule interaction database for Drosophila 
+( Supplementary Table S2). It contains 256 molec- 
+ular interactions, 86.7% of which are secreted sig- 
+naling interactions, 12.1% are extracellular matrix- 
+receptor interactions and 1.17% are cell–cell con- 
+tact interactions ( Fig. S10B). Intercellular com- 
+munications among major cell types in chinmoST 
+and wild-type testes were inferred at three lev- 
+els: ligand-receptor pair interaction level, signal- 
+ing pathway level and the aggregated level (see 
+‘Methods’). We detected 5164 and 5324 signif- 
+icant ligand-receptor pairs among 11 major cell 
+t ypes in wild-t ype and chinmoST testes, respectively 
+( Supplementary Table S3). These signals were fur- 
+ther categorized into 14 distinct pathways, including 
+Bone Morphogenetic Protein (BMP), Activin, JAK- 
+STAT, Epidermal Growth Factor Receptor (EGFR), 
+Tumor Necrosis Factor (TNF), Hedgehog, Fi- 
+broblast Growth Factor Receptor (FGFR), Insulin- 
+like Receptor (IR), Wnt-TCF, Wnt/Ca2 + , Notch, 
+Platelet-Derived Growth Factor/Vascular Endothe- 
+lial Growth Factor (PDGF/VEGF)-receptor related 
+(Pvr), Hippo and Toll signaling pathways. Known 
+essential regulators of stem cell maintenance and 
+niche function, such as BMP and Hedgehog signal- 
+ing pathways [28 ,29 ], were well-recapitulated in the 
+intercellular communication network of wild-type 
+testes ( Fig.S10Cand D), indicating that our cell–cell 
+communication analysis is capable of revealing sig- 
+naling communication between cell types. 
+Next, we determined cell-type-specific sig- 
+naling changes between chinmoST and wild-type 
+testes. Among all 11 cell populations, cells within 
+the testis apex, including hub cells, CySCs and 
+GSCs/spermatogonia, display dramatic changes in 
+the outgoing and incoming interaction strength in 
+chinmoST testes (Fig. 4 A, Fig. S10Cand E). Thus, 
+we then focused on these three cell types. We ob- 
+served that chinmoST CySCs show elevated outgoing 
+signaling to the aggregates of sexually transformed 
+early cyst cells and GSCs/spermatogonia, and 
+reduced outgoing signaling to themselves and 
+hub cells (Fig. 4 A and B). In chinmoST testes, 
+GSCs/spermatogonia are found to be the ‘super 
+receiver and sender’. They have an elevated poten- 
+tial for receiving and sending signals from most 
+other major cell populations, with hub cells and 
+CySCs being two major interactors (Fig. 4 A and 
+B). This is consistent with the requirement for cyst 
+cells, w hich w rap GSCs/spermatogonia and their 
+descendants to prevent germ cell overprolifera- 
+tion [8 ,9 ,11 ]. Hub cells show stronger interactions 
+with GSCs/spermatogonia in chinmoST testes 
+(Fig. 4 A and B). However, they show reduced inter- 
+actions with themselves and the feminized CySCs 
+(Fig. 4 A and B). This suggests that hub cells may lose 
+their ability to communicate with adjacent CySCs at 
+the onset of CySCs feminization. 
+To identify the specific signaling pathways in- 
+volved in CySC sex conversion and germ cell 
+overproliferation, we further analyzed the 14 dis- 
+tinct pathways mentioned above (Fig. 4 C). Four 
+pathways are all significantly altered in chinmoST 
+CySCs: TGF- β (both BMP and Activin signal- 
+ing), EGFR, insulin and Pvr (Fig. 4 C). In chinmoST 
+Page8of16
+Natl Sci Rev,2024,Vol.11,nwae215
+Ilp6-InR signaling in wild-type Ilp6-InR signaling in chinmoST
+Targets
+(receivers)
+Sources
+(senders)
+Hub cells
+Cy
+SCs
+Hub cells
+CySCs
+Hub cells
+Hub cells
+CySCs CySCsECC
+s
+ECC
+s
+ICCs
+IC
+Cs
+GSCs
+GSCs
+Ilp6
+Hub cell
+CySCs
+InR»
+Insulin signaling »
+GSCs
+ImpL2¼
+chinmoST CySCs
+Ilp6
+Chinmo¼
+Germ cell tumor
+Chinmo
+UpdUpd ImpL2
+Ilp6
+InR
+Hub cells
+CySCs
+Feminized
+CySCs
+GSCs
+Upd
+Dsx
+Wild-type testis chinmoST testis  
+JAK-STAT JAK-STAT
+Sources (senders)
+Hub cells
+CySCs
+Early cyst cells
+Early spermatocytes
+Relative strength
+−0.4 0 0.4
+GSCs/spermatogonia
+Targets
+(receivers)
+Intermediate cyst cells
+Late cyst cells
+Intermediate spermatocytes
+Late spermatocytes
+Early spermatids
+Late spermatids
+chinmoST vs. wild-type
+differential interaction strength
+Hub cells
+CySCs
+Early cyst cells
+Early spermatocytes
+GSCs/spermatogonia
+Intermediate cyst cells
+Late cyst cells
+Intermediate spermatocytes
+Late spermatocytes
+Early spermatids
+Late spermatids
+Hub cellsCySCs GSCs/spermatogonia (GSCs)
+SendersReceivers
+CySCs
+Hub cells
+GSCs
+Early Sp. Int. Sp.
+Late Sp.
+Early Sd.
+Late Sd.
+ECCs ICCs
+LCCs
+CySCs
+GSCs
+Hub cells
+Hub cells
+Early Sp.
+Int. Sp.
+Late Sp.
+Early Sd.
+Late Sd.
+ECCs ICCs
+LCCs
+GSCs
+Early Sp.
+Int. Sp.
+Late Sp.
+Early Sd.
+Late Sd.
+ECCs ICCs
+LCCsCySCs
+Hub cellsCySCs GSCs/spermatogonia (GSCs)
+CySCs
+Hub cells
+GSCs
+Early Sp. Int. Sp.
+Late Sp.
+Early Sd.
+Late Sd.
+ECCs ICCs
+LCCs
+CySCs
+GSCs
+Hub cells
+Hub cells
+Early Sp.
+Int. Sp.
+Late Sp.
+Early Sd.
+Late Sd.
+ECCs ICCs
+LCCs
+GSCs
+Early Sp.
+Int. Sp.
+Late Sp.
+Early Sd.
+Late Sd.
+ECCs ICCs
+LCCsCySCs
+−0.050
+−0.025
+0.000
+0.025
+0.050
+BMP
+JAK-STAT
+Hub cells
+CySCs
+ECCs
+GSCs/Sg.
+ICCs
+LCCs
+EGFR
+TNF
+Hedgehog
+FGFR
+Insulin
+Wnt-TCF
+Wnt/Ca2+
+Notch
+Pvr
+Hippo
+Toll
+Activin
+Hub cells
+CySCs
+ECCs
+GSCs/Sg.
+ICCs
+LCCs
+Relativestrength
+ReceiversSenders
+chinmoST
+Outgoing
+Wild-type
+Incoming
+vs.
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°
+°°
+°
+°°
+°
+ns
+ns
+ns
+****
+ns
+ns
+*
+****
+**
+0
+2
+4Expression level0
+2
+4
+0
+2
+4
+ImpL2Ilp6InR
+Hub cells CySCs GSCs/Sg.
+Wild-typechinmoST
+Relative contribution
+1.00
+0.75
+0.50
+0.25
+0.00
+Ilp6-InR
+Ilp8-InR
+G
+AB
+CE D
+F
+Figure 4. scRNA-seq reveals that the soma-germline communication network and insulin signaling are major players in 
+stem cell sexual maintenance. (A) Heatmap showing differential interaction strength among each cell type in chinmoST 
+versus wild-type testes. Red and blue shading represents increased and decreased signaling strength in chinmoST testes 
+compared to wild-type testes, respectively. (B) Circle plots showing chinmoST versus wild-type differential intercellular in- 
+teraction strengths between CySCs (left), GSCs/spermatogonia (middle), hub cells (right) and other testis cell types. CySCs, 
+GSCs/spermatogonia and hub cells are treated as signal senders in the upper three panels and signal receivers in the lower 
+three panels. The dotted lines highlight signal senders/receivers. Widths of edge lines are proportional to the differential in- 
+teraction strength. Red and blue edge lines indicate increased and decreased interaction strength in chinmoST testes, respec- 
+tively. (C) Heatmap showing differential outgoing and incoming signals sent or received by hub cells, somatic cyst cells and 
+GSCs/spermatogonia in chinmoST versus wild-type testes. Red and blue shading represents increased and decreased signal- 
+ing strength in chinmoST testes, respectively. (D) Bar plot showing relative contribution of each identified ligand-receptor pair 
+to the overall insulin signaling targeted to chinmoST GSCs/spermatogonia, which is the ratio of the communication probability 
+of each ligand-receptor pair to that of insulin signaling targeted to chinmoST GSCs/spermatogonia. (E) Chord diagram show- 
+ing the communication probabilities mediated by ligand-receptor pair Ilp6-InR among hub cells, CySCs, GSCs/spermatogonia 
+(GSCs), ECCs and ICCs, in wild-type and chinmoST testes, respectively. Signal receivers are shown in the top half of the chord 
+diagram while signal senders are shown in the bottom half. The inner thinner bar colors represent the target cell types that 
+receive signals from the corresponding outer bar; the inner bar width is proportional to the signal strength received by the 
+targets. Taking all the signals in the niche as a whole, there is a proportional decrease of Dilp6 output from chinmoST CySCs 
+and a proportional decrease of insulin signals received by chinmoST hub cells and CySCs. It is possible that Chinmo-reduction 
+induced feminization in CySCs downregulates the output of insulin-like ligand Dilp6. This could potentially trigger a compen- 
+satory increase in the output of Dilp6 from hub cells. However, most of the increased output of Dilp6 from hub cells is received 
+by the mutant GSCs/spermatogonia, resulting in a distinct elevation of insulin signaling in these cells. (F) Violin plot showing 
+the expression level of insulin pathway genes, including ligand Ilp6 , receptor InR and ligand inhibitor ImpL2 in hub cells, 
+Page9of16
+Natl Sci Rev,2024,Vol.11,nwae215
+Figure 4. ( Continued ) CySCs and GSCs/spermatogonia. Differential expression analysis is performed by Wilcoxon rank sum 
+test (*, P < 0.05; **, P < 0.01; ****, P < 0.0001; ns, non-significant). (G) Working models of Chinmo-reduced CySCs activating 
+insulin signaling in chinmoST GSCs and thus initiating testis germ cell tumorigenesis. WT, wild-type. Sg, spermatogonia. Sp, 
+spermatocytes. Sd, spermatids. Int, intermediate. 
+GSCs/spermatogonia, the most prominent change 
+was the upregulation of the IR signaling pathway 
+(Fig. 4 C), which homeostatically maintains and reg- 
+ulates testis and ovarian GSCs [30 ]. Furthermore, 
+a previous study measuring somatic body size plas- 
+ticity shows that the sex determination pathway 
+governs a female-biased increase in insulin signal- 
+ing activity [31 ]. We speculated that the insulin 
+signals might contribute to somatic-sex-conversion- 
+induced germ cell tumorigenesis. 
+Among all known ligand-receptor pairs, the 
+insulin signaling pathway targeted to chinmoST 
+GSCs/spermatogonia was dominated by the insulin- 
+like peptide 6 ( Dilp6 ) ligand and its receptor insulin- 
+like Receptor ( InR ) (Fig. 4 D). By further analyzing 
+Dilp6-InR signaling in different cell types, we 
+found that GSCs/spermatogonia received more IR 
+signals mainly from hub cells and early cyst cells 
+in chinmoST testes (Fig. 4 E). Consistent with the 
+signaling changes, the receptor InR , downstream 
+effectors of the IR signaling pathway such as Akt 
+kinase ( Akt1 ) and Phosphatidylinositol 3-kinase 
+92E ( Pi3K92E ) are significantly upregulated in 
+chinmoST GSC/spermatogonia over time (Fig. 4 F, 
+Figs S3E–G, S10F). Notably, their expression levels 
+are non-sex-specific in wild-type testes and ovaries 
+( Fig. S9G–I). This observation suggests that these 
+factors are abnormally upregulated in chinmoST germ 
+cells, rather than adopting a female-specific expres- 
+sion pattern. Additionally, ImpL2, which binds the 
+ligand Dilp6 to antagonize insulin signaling [32 ], 
+is significantly downregulated in feminized CySCs 
+(Fig. 4 F). Loss of ImpL2 could promote the short- 
+range diffusion of Dilp6, further increasing insulin 
+signaling in GSCs/spermatogonia as surrounding 
+somatic cells become feminized [32 ]. 
+Taken together, our results suggest that the inter- 
+cellular communications in the chinmoST testis niche 
+are vastly changed, mainly through alterations in the 
+insulin, TGF- βand EGFR signaling pathways. Aside 
+from the canonical sex determination pathway, the 
+insulin signaling pathway is presumed to explain the 
+dramatic change in chinmoST testis niche and could 
+mediate the crosstalk between Chinmo-reduction 
+induced feminization of CySCs and germ cell tu- 
+morigenesis, directly or indirectly (Fig. 4 G). 
+Insulin signaling is involved in stem cell 
+differentiation and sex maintenance 
+Our single-cell data suggested that increased insulin 
+signaling received by germ cells shifts the fate of 
+chinmoST GSCs toward tumorigenesis. To test this 
+hypothesis, we first knocked down the insulin lig- 
+and antagonist ImpL2 within CySCs, since ImpL2 
+expression decreases in CySCs undergoing femi- 
+nization. This yielded testes indistinguishable from 
+wild-type, consistent with a previous report [32 ]. 
+This shows that decreased insulin ligand antagonist 
+ImpL2 alone is insufficient to produce germ cell 
+phenotypes. Since the insulin-like receptor ( InR ) is 
+upregulated in mutant GSCs/spermatogonia, we 
+next overexpressed InR in GSCs. This resulted in 
+the formation of aggregates of Fas3-positive so- 
+matic cells along with the presence of DAPI-bright 
+overproliferating germ cells (38%–67% of testes; 
+n = 294), similar to what we observed in chinmoST 
+testes (Fig. 5 A–C, E, Supplementary Tables S4and 
+S5). Notably, the formation of the follicle cell-like ep- 
+ithelial aggregates presents a milder phenotype with 
+relatively lower penetrance compared to fully devel- 
+oped columnar follicle cel l-li ke epithelia throughout 
+the testes observed in chinmoST testes ( ∼95% of 
+testes) [11 ] (Fig. 1 A′ ′ ′ ′ , Supplementary Tables S4
+and S5). In addition, we overexpressed a down- 
+stream component of the insulin pathway ( Akt1 ) in 
+germ cells; this also resulted in somatic aggregates 
+and overproliferating early germ cells (44%–48% of 
+testes; n = 82), consistent with the above observa- 
+tions (Fig. 5 A, D and E, Supplementary Tables S4
+and S5). We further hypothesized that if chinmoST 
+testes acquire phenotypes as a result of increased 
+insulin signaling in germ cells, we could potentially 
+reverse these phenotypes by decreasing insulin 
+signaling in germ cells of chinmoST testis. Knock- 
+down of InR in GSCs using the driver nanos-Gal4 
+in the chinmoST background partially rescued 
+phenotype progression (one-week-old phenotype 
+penetrance decreased from 90% to 70%) (Fig. 5 F 
+and G, Supplementary Tables S6 and S7). This 
+indicates that the feminization of CySCs can induce 
+GSC fate toward tumorigenesis via the insulin 
+signaling pathway. However, the insulin sig- 
+naling may not be the only pathway involved 
+since it cannot fully rescue the chinmoST mutant 
+phenotype. 
+Taken together, our results imply that Chinmo 
+is working through both the canonical sex determi- 
+nation pathway and the insulin signaling pathway 
+to maintain the male identity of CySCs and the in- 
+tegrity of germ cell differentiation. Sex conversion 
+of CySCs in chinmoST testes disrupts soma-germline 
+communication through the insulin pathway and 
+leads to differentiation defects. 
+Page10of16
+Natl Sci Rev,2024,Vol.11,nwae215
+F
+Control Nos>UAS-InRA1325D
+DAPI DAPI
+VASA VASA
+Fas3 Fas3
+Nos>UAS-InRR418P
+DAPI
+VASA
+Fas3
+DAPI
+VASA
+Fas3
+BC
+chinmoST
+E
+DAPI
+VASA
+Fas3
+Nos>AKT1 OE 
+DA
+G
+100
+50
+0
+chinmoST; nos-Gal4
+5 day-old 7 day-old
+Severe
+Mild II
+Mild I
+Normal
+%o ft estes
+Phenotype
+chinmoST;
+UAS-InR RNAi/TM3
+chinmoST;
+nos-Gal4/UAS-InR RNAi
+chinmoST;
+nos-Gal4/UAS-InR RNAi
+chinmoST; nos-Gal4
+chinmoST;
+UAS-InR RNAi/TM3
+Vasa, Fas3, DAPI
+Vasa, Fas3, DAPI
+SevereMild II
+Mild INormal
+Figure 5. Insulin signaling components are involved in stem cell differentiation and 
+sex maintenance. (A–E) Two-week-old whole adult testes immunostained for Vasa 
+(germline), Fas3 (hub membranes) and DAPI (DNA) in control ( Nos-Gal4 > UAS- 
+GFP ) (A), Nos-Gal4 > UAS-InRA1325D (expresses a constitutively active InR under 
+the control of UAS; the A1325D amino acid change mimics the human V938D 
+change) (B), Nos-Gal4 > UAS-InRR418P (expresses a constitutively active InR under 
+the control of UAS; the R418P amino acid change mimics the human K86P change) 
+(C), Nos-Gal4 > UAS-Akt1 (D) and chinmoST (E). Arrowheads mark somatic cyst cells. 
+(F) The follicle-like cell phenotype in 2-week-old chinmoST testes (E) can be partially res- 
+cued by knocking down InR in the chinmoST GSC lineage ( chinmoST ; Nos-Gal4/UAS-InR 
+RNAi ), displaying a range of mild to severe phenotypes [11 ]. (G) Composite bar graph 
+showing the percentage of testes with normal, mild-I, mild-II and severe phenotypes 
+after knocking down InR in adult chinmoST GSC lineage ( chinmoST ; Nos-Gal4/UAS-InR 
+RNAi ) for the number of days indicated. Control genotypes consist of chinmoST ; Nos- 
+Gal4 and chinmoST ; UAS-InR RNAi / TM3 . Morphologically normal wild-type testes were 
+scored as ‘normal’. Testes with Fas3-positive epithelial aggregates at the apex near the 
+hub were scored as ‘mild-I’; these testes often contained overproliferating germ cells. 
+Testes displaying Fas3-positive epithelial aggregates and overproliferating early germ 
+cells approximately halfway from the distal end were classified as ‘mild-II’. Testes with 
+Fas3-positive epithelial aggregates at the distal 2/3 or throughout the entire testis were 
+scored as ‘severe’; these testes often showed germ cells enclosed by these epithelial 
+aggregates, leading to their arrest at an early spermatogonial stage, or to degeneration 
+[11 ]. Scale bars = 20 μm. 
+Chinmo directly targets and activates dsx 
+and insulin pathway members 
+Although Chinmo, as a Zinc finger C2H2 protein, is 
+reported as a putative transcription factor [9 ,33 ,34 ], 
+no direct binding targets for Chinmo have been 
+identified so far. We applied CUT&Tag assay to 
+probe Chinmo binding sites (Chinmo peaks) in 
+wild-type and chinmoST testes (Fig. 6 A). After rig- 
+orous quality control ( Fig. S11A–D and see ‘Meth- 
+ods’), we obtained 1290 and 3425 peaks in wild- 
+type and chinmoST testes, respectively ( Fig. S11E). 
+Most Chinmo binding sites in testes were distributed 
+within promoter regions ( ≤1 kb) (Fig. 6 B). En- 
+riched motifs of these sites shared high similarity 
+with known motifs including Trithorax-like (Trl), 
+Motif 1 Binding Protein (M1BP), Adult enhancer 
+factor 1 (Aef1) and Boundary element-associated 
+factor of 32 kD (BEAF-32) (Fig. 6 C). Wild-type 
+Chinmo peaks with these motifs have distinct pro- 
+tein binding footprints ( Fig. S11F), suggesting that 
+Chinmo might interact or share similar motifs with 
+these factors. 1081 genes associated with Chinmo 
+binding sites are enriched in the regulation of ep- 
+ithelial development, neurogenesis, cell communica- 
+tion, female gamete generation and cell fate commit- 
+ment (Fig. 6 D), which is consistent with the iden- 
+tity of Chinmo as a neuronal temporal regulator, sex 
+determination effector and stem cell maintenance 
+factor [8 –11 ,34 –36 ]. Compared to Chinmo motif- 
+containing sites identified previously through bac- 
+terial one-hybrid approaches [37 ], our data showed 
+507 overlapping Chinmo peaks. This included sev- 
+eral targets previously predicted as putative targets 
+of Chinmo (such as mirror ( mirr ), scribble ( scrib ), 
+polychaetoid ( pyd ) and DE-cadherin ( shg )) [8 ], iden- 
+tified through recognition of a Chinmo motif using 
+the bacterial one-hybrid system ( Fig.S12). 
+We further asked which genes are directly tar- 
+geted by Chinmo in feminized CySCs by perform- 
+ing differential binding sites (DBSs) analysis be- 
+tween chinmoST and wild-type testes. 1426 upregu- 
+lated and 1947 downregulated Chinmo-binding sites 
+were identified in chinmoST testes. Since Chinmo is 
+depleted in the CySC lineage and slightly upregu- 
+lated in GSCs/spermatogonia and early germ cells 
+in chinmoST testes (Fig. 1 D and E, Fig. S3Band D), 
+we assumed that the downregulated DBSs repre- 
+sent Chinmo-binding sites in CySCs. By overlapping 
+the associated genes of downregulated Chinmo- 
+binding sites and DEGs in chinmoST CySCs, we 
+identified 152 direct targets of Chinmo in CySCs 
+( Supplementary Table S8). T hese target genes are 
+enriched in cell fate commitment, ovarian follicle 
+cell development and sex differentiation ( Fig.S11G). 
+These results corroborate the above-mentioned 
+findings that Chinmo is a major contributor influ- 
+encing the sex maintenance and fate commitment of 
+CySC lineage cells. 
+Among 152 direct targets of Chinmo in CySCs, 
+we found that some canonical sex determination 
+Page11of16
+Natl Sci Rev,2024,Vol.11,nwae215
+Figure 6. Chinmo directly targets and activates dsx and insulin pathway members. 
+(A) Workflow for CUT&Tag sequencing using anti-Chinmo antisera. (B) Pie chart show- 
+ing the percentage of reproducible Chinmo binding sites in wild-type testis that fall on 
+different genomic regions. (C) Dot plot showing enriched motifs of Chinmo binding sites 
+in wild-type testis. Dot size represents percentage of target peaks with corresponding 
+motif and dot color represents degree of motif enrichment in target peaks compared 
+to random background sequences. Enriched motifs that are found in > 15% of target 
+peaks are labeled with the most similar known motifs and similarity scores. The x- 
+axis represents rank of motif ordered by P value. (D) Top GO terms enriched for Chinmo 
+peaks associated genes ( n = 1081) in wild-type testis. (E) Genome tracks for exemplary 
+Chinmo direct targets identified by CUT&Tag, including dsx , fru , ImpL2 and Pvf1 in wild- 
+type and chinmoST testis. Violin plots on the right showing expression of these genes in 
+wild-type and chinmoST testis, respectively. The colored blocks beneath Chinmo peaks 
+represent MACS2-called peaks, which are considered genuine Chinmo binding sites in 
+wild-type and chinmoST testis, respectively. WT, wild-type. Exp, expression. 
+factors and factors of the above-mentioned differen- 
+tial signaling pathways are top-ranked (Fig. 6 E). Pre- 
+viously we showed that Chinmo maintains the male 
+identity of CySCs through the canonical male de- 
+termination factor Dsx [11 ]. Here we verified that 
+Chinmo is directly activating dsx as well as an- 
+other male sex determination factor fru in CySCs 
+(Fig. 6 E) . Furthermore, the negative regulator of 
+insulin signaling ImpL2 and the Pvr signaling lig- 
+and PDGF- and VEGF-related factor 1 ( Pvf1 ), mem- 
+bers of differentially signaling pathways between 
+chinmoST and wild-type testes, are also directly ac- 
+tivated by Chinmo in CySCs (Fig. 6 E). These data 
+suggest that Chinmo can directly target and activate 
+the expression of sex determination factors and in- 
+sulin pathway components to regulate sexual main- 
+tenance in CySCs. Additionally, genes upregulated 
+in mutant GSCs/spermatogonia, such as the female 
+germline sex determination factors ovo and otu [1 ], 
+also display Chinmo binding and this binding in- 
+creases in chinmoST testes ( Fig.S13A). However, we 
+have also uncovered Chinmo’s role as a transcrip- 
+tional repressor for some genes ( Fig. S13B). Upon 
+comprehensive analysis of Chinmo binding and its 
+targets’ expression, our results suggest that in both 
+soma and germline, Chinmo predominantly func- 
+tions as a transcriptional activator to promote the ex- 
+pression of male-biased genes ( Fig.S13Cand D). 
+DISCUSSION 
+The chinmoST testis serve as an excellent model 
+for investigating the molecular mechanisms under- 
+lying sex maintenance of somatic CySCs and the 
+associated intercellular signaling between somatic 
+cells and germ cells. Through scRNA-seq and the 
+Chinmo CUT&Tag assay on both wild-type and mu- 
+tant testes, we found that the reduction of Chinmo in 
+chinmoST CySCs leads to the downregulation of dsxM 
+and the upregulation of FSC markers at the tran- 
+scription level, thereby triggering a comprehensive 
+transcriptional response to promote feminization. 
+Furthermore, our data revealed significant disrup- 
+tions in various intercellular communication path- 
+ways within the chinmoST testes, with the insulin- 
+receptor signaling pathway exhibiting the most 
+pronounced alterations. Remarkably, some major 
+components of the insulin-receptor signaling path- 
+way are directly bound by Chinmo. In combination 
+with phenotypic verification via genetic manipula- 
+tion in CySCs and GSCs, we validated that the in- 
+sulin pathway signaling components, including the 
+insulin receptor and its downstream effector Atk1 , 
+are major contributors to germline defects seen in 
+chinmoST testes. Altogether, our work indicates that 
+Chinmo directly regulates the male sex determina- 
+tion factor dsx , the fly homolog of the mammalian 
+DMRT1 , as well as other intercellular signals such 
+as insulin signaling, to maintain male identity of the 
+CySC lineage cells and promote normal spermatoge- 
+nesis. 
+The mechanism of sex determination in 
+Drosophila is orchestrated by the cascade of sex- 
+specific splicing of mRNA. Our study reveals 
+that the molecular mechanisms underlying sex 
+maintenance in adult files involve canonical sex 
+determination genes. Specifically, Chinmo, as a key 
+factor to maintain the male identity of adult CySCs, 
+can directly regulate the transcriptional levels of 
+sex determination genes including dsx and fru . Fur- 
+thermore, Chinmo has also been shown to repress 
+alternative splicing of tra pre-mRNA to maintain 
+male sex identity of CySCs [9 ]. Our CUT&Tag 
+data reveal that Chinmo binds to the promoters of 
+splicing factor genes like U2 small nuclear riboprotein 
+Page12of16
+Natl Sci Rev,2024,Vol.11,nwae215
+auxiliary factor 50 ( U2af50 ), which is a Sex lethal 
+( Sxl ) [3 ] antagonist that can regulate alternative 
+splicing of tra pre-mRNA [38 ]. Hence, Chinmo 
+potentially regulates both gene expression and alter- 
+native splicing. However, our scRNA-seq data only 
+capture the 3 ʹend of genes, which limits our ability 
+to detect sex-specific splicing in canonical sex deter- 
+mination genes. Further work is required to decipher 
+the role of alternative splicing in sex maintenance. 
+In this study, we report the cell–cell commu- 
+nication networks in the Drosophila testis for the 
+first time, and offer insights into additional func- 
+tional signaling pathways. By comparing intercellular 
+communications between wild-type and chinmoST 
+testes, we found significant changes in several signal- 
+ing pathways, particularly the insulin signaling path- 
+way, which accompanies the chinmoST -mediated sex 
+transformation and defective gametogenesis. Fur- 
+thermore, soma-germline signaling pathways such as 
+the TGF- β pathway (BMP and Activin signaling), 
+EGFR and PVR signaling were found to be activated 
+or repressed in mutant CySCs (Fig. 4 C). A previ- 
+ous study has shown that ectopically activated Ac- 
+tivin signaling in GSCs results in overproliferation 
+of both stem-cell-like and spermatogonial-like cells 
+[39 ], which is consistent with the chinmoST pheno- 
+type. This indicates that in addition to the insulin 
+signaling, other detected signaling changes may also 
+contribute to the disrupted gametogenesis. It also 
+helps to explain why a sole decrease of insulin lig- 
+and antagonist ImpL2 in CySCs is insufficient to phe- 
+nocopy germ cell phenotypes. It is plausible that the 
+reduction of Chinmo in CySCs promotes the ex- 
+pression of InR in GSCs through any of these soma- 
+germline signaling pathways, thus priming for in- 
+creased insulin signaling in chinmoST GSCs. Further 
+investigations are required to unravel the contribu- 
+tion of other membrane-mediated signal exchanges 
+and dysregulated genes in this process. 
+Whether germline sex transformations are true 
+within each cell or instead represent mosaic inter- 
+sexes is a long-standing question. Previous methods 
+relied primarily on immunostaining for a limited 
+number of markers to assess the sex status of cells 
+[1 ,3 ,11 ,19 ,21 ,40 ], or bulk sequencing of the entire 
+tissue or sorted cells [8 ,9 ,24 ,41 ]. However, these 
+methods pose challenges in determining the extent 
+of sex conversion in the whole transcriptomic level 
+w ithin indiv idual cell types. Our research, employ- 
+ing single-cell transcriptomic analysis, provides a 
+comprehensive and high-resolution approach to 
+address this question. Our investigation reveals a 
+distinctive and partial transformation, as well as a de- 
+gree of ambiguity in the sexual identity of germ cells 
+in chinmoST , supported by multiple lines of evidence. 
+Firstly, our correlation analysis comparing mutant 
+germ cells with both male and female counterparts 
+indicates a decreased correlation with wild-type 
+male cells and an increased correlation with female 
+cells, yet this correlation remains partial (Fig. 3 C, 
+Fig.S7D).Furthermore,astheleveloffeminization  
+changes over time, germ cells remain intermediate 
+between male and female ( Fig.S7C). Moreover, the 
+sex conversion varies across developmental stages: 
+chinmoST GSCs/spermatogonia display closer re- 
+semblance to wild-type male counterparts, while 
+chinmoST early spermatocytes exhibit greater similar- 
+ities with ovarian germline cells (Fig. 3 C, Fig.S7D). 
+Notably, chinmoST early spermatocytes display 
+distinctive within-population heterogeneity, con- 
+sisting of cells in various states of sex-transformation 
+( Fig. S8Aand B). Examining differential gene ex- 
+pression patterns reveals a complex scenario: certain 
+pathways, such as Hedgehog pathway components, 
+maintain their original sex identity. Conversely, the 
+expression levels of some Wnt pathway constituents 
+fall into an intermediate range between male and 
+female. Notably, male germline markers like Pif1a 
+[13 ,22 ] and Phf7 [3 ,24 ] maintain a predominantly 
+male expression pattern ( Fig.S9A and F). However, 
+the expression levels of genes associated w ith ooc yte 
+differentiation, such as ovo and otu [1 ] lie in between 
+wild-type male and female ( Fig. S9Dand E). These 
+observations collectively underscore the intricate 
+nature of partial sex transformations within the 
+germline in chinmo mutant flies. 
+Since Chinmo plays a pivotal role in the man- 
+ifestation of mutant phenotype, it is important 
+to identify target genes and the regulatory nature 
+of Chinmo. Although previous studies have pro- 
+posed Chinmo as a putative transcriptional repres- 
+sor [8 ,9 ,33 ,34 ], our findings i l lustrate its capacity 
+to both activate and repress target gene expression 
+(Fig. 6 E, Fig.S13B). However, our observations lean 
+towards a predominant activation of genes linked 
+to cell fate commitment, ovarian follicle cell devel- 
+opment and sex differentiation within Drosophila 
+testis (Fig. 6 D, Fig. S13C and D). Interestingly, 
+the enriched motifs identified in Chinmo binding 
+sites exhibit notable similarity to known motifs such 
+as Trl, Aef1 and BEAF-32, which have been re- 
+ported to function as either transcriptional activators 
+or repressors [42 ,43 ]. Chinmo might interact with 
+distinct cofactors to modulate its regulatory func- 
+tions. Future work is needed to determine the in- 
+tricate regulatory nature of Chinmo across differ- 
+ent cell types. Additionally, the observed increase 
+of Chinmo binding peaks in chinmoST testes may be 
+attributed to elevated Chinmo expression in germ 
+cells within chinmoST testes (Fig. 1 D, Fig. S3D). 
+However, without cell-type-specific CUT&Tag data, 
+it is not possible to definitively confirm whether 
+Page13of16
+Natl Sci Rev,2024,Vol.11,nwae215
+these Chinmo-binding peaks are exclusively located 
+in germ cells. 
+Chinmo has structurally conserved orthologs ex- 
+tending to the Palaeoptera [44 ], which can be dated 
+back to 400 mi l lion years ago. However, the extent 
+of its functional conservation remains unclear. Ex- 
+ploring whether Chinmo homologs play a role in 
+sex maintenance in other organisms is an intriguing 
+area for future investigation. Beyond the functional 
+conservation of Chinmo protein, our findings reveal 
+that disturbances in somatic sex maintenance disrupt 
+soma-germline communication, thus leading to im- 
+paired gonadal gametogenesis. This provides valu- 
+able insights into human testicular diseases observed 
+in adult males. (Stem) cell sex confusion or conver- 
+sion might be a potential mechanism contributing 
+to defective gametogenesis shared among flies, mice 
+and humans. 
+MATERIALS AND METHODS 
+A detailed description is included in Supplementary 
+Materials and Methods. 
+DATA AVAILABILITY 
+scRNA-seq and CUT&Tag data have been de- 
+posited at NCBI Gene Expression Omnibus (GEO) 
+repository, with accession numbers GSE201673 
+(reviewer token: ilitqseofvaxhuz) and GSE201579 
+(reviewer token: olmjkgqobvaptex), respectively. 
+Chinmo CUT&Tag data sets are viewable on 
+the University of California Santa Cruz (UCSC) 
+Genome Browser ( http://genome.ucsc.edu/s/
+PeggySze/Fly_testis_Chinmo_CUT&Tag). All 
+original codes are provided at the GitHub reposi- 
+tory ( https://github.com/PeggySze/ChinmoST). 
+All other data are available in the main text or the 
+supplementary files. 
+SUPPLEMENTARY DATA 
+Supplementary data are available at NSRonline. 
+ACKNOWLEDGEMENTS 
+We thank Ting Guo and Ma laboratory members for helpful dis- 
+cussions. We thank Chung-I Wu and Karen Tolentino for helpful 
+comments. We thank the Bloomington Drosophila Stock Center, 
+Vienna Drosophila Resource Center, TsingHua Fly Center and 
+Core Facility of Drosophila Resource and Technology, Shanghai 
+Institute of Biochemistry and Cell Biology, Chinese Academy of 
+Sciences, for fly strains and Sheng Li, Suning Liu and Zhaohui 
+Wang for antibodies. 
+FUNDING 
+This work was supported by the National Key Research and 
+Development Program of China (2022YFA0912900 to Q. Ma), 
+the National Natural Science Foundation of China (32070870 
+to Q. Ma, 32070644, 32293190, and 32293191 to J. Xu), 
+the Guangdong Basic and Applied Basic Research Foundation 
+(2021A1515010758 to Q. Ma, 2024A1515011285 to J. Xu), the 
+Guangdong Provincial Key Laboratory of Synthetic Genomics 
+(2023B1212060054 to Q. Ma), the Shenzhen Key Laboratory of 
+Synthetic Genomics (ZDSYS2018020 6180 6209 to Q. Ma), the 
+Shenzhen Institute of Synthetic Biology Scientific Research Pro- 
+gram (ZTXM2020 0 0 08 and DWKF20210 0 03 to Q. Ma), the 
+Strategic Priority Research Program of the Chinese Academy of 
+Sciences (XDB0480 0 0 0 to Q. Ma) and the National Institutes of 
+Health (R35GM136 6 65 to E. Matunis), the Guangzhou Key Re- 
+search and Development Program (2023B03J1347 to J. Xu). 
+AUTHOR CONTRIBUTIONS 
+Q. Ma, J. Xu and R. Zhang conceptualized the project. R. Zhang, 
+Z. Ming performed the fly work, sequencing and imaging experi- 
+ments. S. Xu and P. Shi developed the code. R. Zhang and P. Shi 
+validated results. S. Xu, R. Zhang, Q. Ma, J. Xu and P. Shi per- 
+formed the formal analysis. Z. Liu performed the CUT & Tag ex- 
+periment. Y. He performed the fly dissection. P. Shi curated the 
+metadata. R. Zhang and P. Shi wrote the original draft. R. Zhang, 
+P. Shi, Q. Ma, J. Xu, E. Matunis, J. Dai, S. Xu and Z. Liu edited 
+the manuscript. R. Zhang and P. Shi prepared figures. Q. Ma and 
+J. Xu directed the work. Q. Ma J. Xu and E. Matunis acquired the 
+funding. All authors contributed to the article and approved the 
+submitted version. 
+Conflict of interest statement. None declared. 
+REFERENCES 
+1. Murray SM, Yang SY, Van Doren M. Germ cell sex determina- 
+tion: a collaboration between soma and germline. Curr Opin Cell
+Biol2010; 22 : 722–9. 
+2. Salz HK, Dawson EP, Heaney JD. Germ cell tumors: insights 
+from the Drosophila ovary and the mouse testis. Mol Reprod
+Dev2017; 84 : 200–11. 
+3. Bhaskar PK, Southard S, Baxter K et al. Germline sex determi- 
+nation regulates sex-specific signaling between germline stem 
+cells and their niche. Cell Rep2022; 39 : 110620. 
+4. Wawersik M, Milutinovich A, Casper AL et al. Somatic control 
+of germline sexual development is mediated by the JAK/STAT 
+pathway. Nature2005; 436 : 563–7. 
+5. Lindeman RE, Murphy MW, Agrimson KS et al. The conserved 
+sex regulator DMRT1 recruits SOX9 in sexual cell fate repro- 
+gramming. Nucleic Acids Res 2021; 49 : 6144–64. 
+6. Matson CK, Murphy MW, Sarver AL et al. DMRT1 prevents fe- 
+male reprogramming in the postnatal mammalian testis. Nature
+2011; 476 : 101–4. 
+7. Uhlenhaut NH, Jakob S, Anlag K et al. Somatic sex reprogram- 
+ming of adult ovaries to testes by FOXL2 ablation. Cell 2009; 
+139 : 1130–42. 
+Page14of16
+Natl Sci Rev,2024,Vol.11,nwae215
+8. Grmai L, Harsh S, Lu S et al. Transcriptomic analysis of feminizing somatic stem 
+cells in the Drosophila testis reveals putative downstream effectors of the tran- 
+scription factor Chinmo. G32021; 11 : jkab067. 
+9. Grmai L, Hudry B, Miguel-Aliaga I et al. Chinmo prevents transformer al- 
+ternative splicing to maintain male sex identity. PLoS Genet 2018; 14 : 
+e1007203. 
+10. Ma Q, de Cuevas M, Matunis EL. Chinmo is sufficient to induce male fate 
+in somatic cells of the adult Drosophila ovary. Development 2016; 143 : 
+754–63. 
+11. Ma Q, Wawersik M, Matunis EL. The Jak-STAT target Chinmo prevents sex 
+transformation of adult stem cells in the Drosophila testis niche. Dev Cell2014; 
+31 : 474–86. 
+12. Witt E, Benjamin S, Svetec N et al. Testis single-cell RNA-seq reveals the 
+dynamics of de novo gene transcription and germline mutational bias in 
+Drosophila. eLife2019; 8 : e47138. 
+13. Li H, Janssens J, De Waegeneer M et al. Fly Cell Atlas: a single-nucleus tran- 
+scriptomic atlas of the adult fruit fly. Science2022; 375 : eabk2432. 
+14. Yu J, Li Z, Fu Y et al. Single-cell RNA-sequencing reveals the transcriptional 
+landscape of ND-42 mediated spermatid elongation via mitochondrial deriva- 
+tive maintenance in Drosophila testes. Redox Biol2023; 62 : 102671. 
+15. Boggs RT, Gregor P, Idriss S et al. Regulation of sexual differentiation in D. 
+melanogaster via alternative splicing of RNA from the transformer gene. Cell
+1987; 50 : 739–47. 
+16. Rust K, Byrnes LE, Yu KS et al. A single-cell atlas and lineage analysis of the 
+adult drosophila ovary. Nat Commun2020; 11 : 5628. 
+17. Matthews KA, Miller DF, Kaufman TC. Functional implications of the unusual 
+spatial distribution of a minor alpha-tubulin isotype in Drosophila: a common 
+thread among chordotonal ligaments, developing muscle, and testis cyst cells. 
+Dev Biol1990; 137 : 171–83. 
+18. Rathke C, Barckmann B, Burkhard S et al. Distinct functions of Mst77F and 
+protamines in nuclear shaping and chromatin condensation during Drosophila 
+spermiogenesis. Eur J Cell Biol 2010; 89 : 326–38. 
+19. Janzer B and Steinmann-Zwicky M. Cell-autonomous and somatic signals con- 
+trol sex-specific gene expression in XY germ cells of Drosophila. Mech Dev
+2001; 100 : 3–13. 
+20. Staab S, Heller A, Steinmann-Zwicky M. Somatic sex-determining signals act 
+on XX germ cells in Drosophila embryos. Development1996; 122 : 4065–71. 
+21. Waterbury JA, Horabin JI, Bopp D et al. Sex determination in the Drosophila 
+germline is dictated by the sexual identity of the surrounding soma. Genetics
+2000; 155 : 1741–56. 
+22. Yuan X, Zheng H, Su Y et al. Drosophila Pif1A is essential for spermatogenesis 
+and is the homolog of human CCDC157, a gene associated with idiopathic NOA. 
+Cell Death Dis 2019; 10 : 125. 
+23. Mahadevaraju S, Fear JM, Akeju M et al. Dynamic sex chromosome expression 
+in Drosophila male germ cells. Nat Commun2021; 12 : 892. 
+24. Shapiro-Kulnane L, Smolko AE, Salz HK. Maintenance of Drosophila germline 
+stem cell sexual identity in oogenesis and tumorigenesis. Development2015; 
+142 : 1073–82. 
+25. Mercer M, Jang S, Ni C et al. The dynamic regulation of mRNA translation 
+and ribosome biogenesis during germ cell development and reproductive aging. 
+Front Cell Dev Biol 2021; 9 : 710186. 
+26. Doggett K, Jiang J, Aleti G et al. Wake-up-call, a lin-52 paralogue, and always 
+early, a lin-9 homologue physically interact, but have opposing functions in reg- 
+ulating testis-specific gene expression. Dev Biol2011; 355 : 381–93. 
+27. Gramates LS, Agapite J, Attrill H et al. FlyBase: a guided tour of highlighted 
+features. Genetics2022; 220 : iyac035. 
+28. Michel M, Kupinski AP, Raabe I et al. Hh signalling is essential for somatic 
+stem cell maintenance in the Drosophila testis niche. Development2012; 139 : 
+2663–9. 
+29. Losick VP, Morris LX, Fox DT et al. Drosophila stem cell niches: a decade of 
+discovery suggests a unified view of stem cell regulation. Dev Cell 2011; 21 : 
+159–71. 
+30. Matunis EL, Stine RR, de Cuevas M. Recent advances in Drosophila male 
+germline stem cell biology. Spermatogenesis2012; 2 : 137–44. 
+31. Millington JW, Brownrigg GP, Chao C et al. Female-biased upregulation of in- 
+sulin pathway activity mediates the sex difference in Drosophila body size plas- 
+ticity. eLife2021; 10 : e58341. 
+32. Amoyel M, Hillion K-H, Margolis SR et al. Somatic stem cell differentiation is 
+regulated by PI3K/tor signaling in response to local cues. Development 2016; 
+143 : 3914–25. 
+33. Dopie J, Rajakylä EK, Joensuu MS et al. Genome-wide RNAi screen for nu- 
+clear actin reveals a network of cofilin regulators. JC e l lS c i2015; 128 : 2388–
+400. 
+34. Flaherty MS, Salis P, Evans CJ et al. Chinmo is a functional effector of the 
+JAK/STAT pathway that regulates eye development, tumor formation, and stem 
+cell self-renewal in Drosophila. Dev Cell2010; 18 : 556–68. 
+35. Tseng CY, Burel M, Cammer M et al. Chinmo-mutant spermatogonial stem cells 
+cause mitotic drive by evicting non-mutant neighbors from the niche. Dev Cell
+2022; 57 : 80–94.e87. 
+36. Zhu S, Lin S, Kao CF et al. Gradients of the Drosophila Chinmo BTB-zinc finger 
+protein govern neuronal temporal identity. Cell2006; 127 : 409–22. 
+37. Enuameh MS, Asriyan Y, Richards A et al. Global analysis of Drosophila Cys2 - 
+His2 zinc finger proteins reveals a multitude of novel recognition motifs and 
+binding determinants. Genome Res2013; 23 : 928–40. 
+38. Valcárcel J, Singh R, Zamore PD et al. The protein Sex-lethal antagonizes the 
+splicing factor U2AF to regulate alternative splicing of transformer pre-mRNA. 
+Nature1993; 362 : 171–5. 
+39. Bunt SM and Hime GR. Ectopic activation of Dpp signalling in the male 
+Drosophila germline inhibits germ cell differentiation. Genesis 2004; 39 : 84–
+93. 
+40. Casper A and Van Doren M. The control of sexual identity in the Drosophila 
+germline. Development2006; 133 : 2783–91. 
+41. Primus S, Pozmanter C, Baxter K et al. Tudor-domain containing protein 5-like 
+promotes male sexual identity in the Drosophila germline and is repressed in 
+females by sex lethal. PLoS Genet2019; 15 : e1007617. 
+42. Rieder LE, Koreski KP, Boltz KA et al. Histone locus regulation by the 
+Drosophila dosage compensation adaptor protein CLAMP. Genes Dev2017; 31 : 
+1494–508. 
+43. Espinás ML, Jiménez-García E, Vaquero A et al. The N-terminal POZ domain 
+of GAGA mediates the formation of oligomers that bind DNA with high affinity 
+and specificity. J Biol Chem 1999; 274 : 16461–9. 
+44. Laslo M, Just J, Angelini DR. Theme and variation in the evolution of insect 
+sex determination. J Exp Zool B Mol Dev Evol 2023; 340 : 162–81. 
+45. Fuller MT and Spradling AC. Male and female Drosophila germline stem cells: 
+two versions of immortality. Science2007; 316 : 402–4. 
+46. Hardy RW, Tokuyasu KT, Lindsley DL et al. The germinal proliferation center 
+in the testis of Drosophila melanogaster. J Ultrastruct Res 1979; 69 : 180–
+90. 
+Page 15 of 16
+Natl Sci Rev,2024,Vol.11,nwae215
+47. Fuller MT. Genetic control of cell proliferation and differentia- 
+tion in Drosophila spermatogenesis. Semin Cell Dev Biol 1998; 9 : 
+433–44. 
+48. Lenhart KF and DiNardo S. Somatic cell encystment promotes abscission in 
+germline stem cells following a regulated block in cytokinesis. Dev Cell 2015; 
+34 : 192–205. 
+49. Shields AR, Spence AC, Yamashita YM et al. The actin-binding protein pro- 
+filin is required for germline stem cell maintenance and germ cell enclosure by 
+somatic cyst cells. Development2014; 141 : 73–82. 
+50. Li Z, Wu Y, Fu Y et al. Cyst stem cell lineage eIF5 non-autonomously prevents 
+testicular germ cell tumor formation via eIF1A/eIF2 γ-mediated pre-initiation 
+complex. Stem Cell Res Ther 2022; 13 : 351. 
+©The Author(s) 2024. Published by Oxford University Press on behalf of China Science Publishing & Media Ltd. This is an Open Access article distributed under the terms of the Creative 
+Commons Attribution License ( https://creativecommons.org/licenses/by/4.0/), which permits unrestricted reuse, distribution, and reproduction in any medium, provided the original 
+work is properly cited. 
+Page 16 of 16

@@ -1,0 +1,10 @@
+.venv/
+data/
+output/
+__pycache__/
+*.pyc
+*.h5ad
+*.pdf
+*.zip
+*.whl
+*.tar.gz
