@@ -48,19 +48,31 @@ class Agent:
         self.planner = Planner(self.llm, self.registry)
         self.executor = Executor(self.session, llm=self.llm, verbose=verbose)
 
-    def handle(self, user_text):
-        """处理一条自然语言指令。返回 (ok, message)。"""
+    def _emit(self, event):
+        """M8：步骤级事件回调（UI 用它做流式展示）；未设置时为空操作。"""
+        cb = getattr(self, "on_event", None)
+        if cb:
+            try:
+                cb(event)
+            except Exception:  # noqa: BLE001 - UI 回调异常不得影响执行
+                pass
+
+    def prepare_steps(self, user_text):
+        """只规划不执行：返回 (steps, reply, dropped)，已做依赖补全与参数规整。
+
+        M8 新增：UI 的「计划确认卡片」用它拿到步骤表，用户确认后再交给 run_steps。
+        """
         print(f"\n🧠  Planner 解析: {user_text}")
         try:
             steps, reply, dropped = self.planner.plan(user_text, self.session)
         except Exception as e:  # noqa: BLE001
-            return False, f"Planner 失败（可能是 LLM 输出非 JSON）: {e}"
+            return [], f"Planner 失败（可能是 LLM 输出非 JSON）: {e}", []
         if dropped:
             print(f"  ⚠️  丢弃无效步骤: {dropped}")
         if reply:
             print(f"  💬 {reply}")
         if not steps:
-            return False, "Planner 未产出可执行步骤（可能需要用户澄清）"
+            return [], reply or "", dropped
 
         # 依赖规范化（可靠性来自架构而非 prompt）：需要 dense 数据的步骤前
         # 若已有虚拟切片但未合并，自动补 make_dense
@@ -71,6 +83,7 @@ class Agent:
                     and all(x["skill"] != "make_dense" for x in expanded + steps):
                 expanded.append({"skill": "make_dense", "args": {},
                                  "reason": "自动补全依赖：合并多层数据"})
+                self._emit({"type": "auto_step", "skill": "make_dense"})
             expanded.append(s)
         steps = expanded
 
@@ -81,6 +94,21 @@ class Agent:
         for s in steps:
             s["args"], _notes = normalize_args(s["skill"], s.get("args", {}),
                                                self.registry, emit=print)
+        return steps, reply or "", dropped
+
+    def run_steps(self, steps, on_event=None):
+        """按序执行已规划好的步骤。返回 (ok, message)。
+
+        M8 新增 on_event：每步开始/完成/被拦截都会回调，供 UI 流式展示。
+        """
+        self.on_event = on_event
+        try:
+            return self._run_steps(steps)
+        finally:
+            self.on_event = None
+
+    def _run_steps(self, steps):
+        import time
 
         for s in steps:
             skill, args = s["skill"], s.get("args", {})
@@ -94,14 +122,34 @@ class Agent:
                        + "\n  - ".join(problems)
                        + "\n请补充信息或先执行依赖步骤。")
                 print(f"  🚫 Verifier 拦截: {problems}")
+                self._emit({"type": "verifier_block", "skill": skill,
+                            "problems": problems})
                 return False, msg
 
+            self._emit({"type": "step_start", "skill": skill, "args": dict(args)})
             print(f"  ⚙️  Executor 执行: {skill}({args})")
+            t0 = time.time()
             ok, message = self.executor.run_step(skill, args)
+            elapsed = round(time.time() - t0, 1)
             if not ok:
+                self._emit({"type": "step_fail", "skill": skill,
+                            "detail": str(message), "elapsed_sec": elapsed})
                 return False, f"步骤 {skill} 失败: {message}"
             print(f"  ✅ 完成: {message}")
+            self._emit({"type": "step_done", "skill": skill,
+                        "result": message if isinstance(message, dict) else {},
+                        "elapsed_sec": elapsed})
         return True, f"完成 {len(steps)} 个步骤"
+
+    def handle(self, user_text, on_event=None):
+        """处理一条自然语言指令（规划 + 执行）。返回 (ok, message)。
+
+        M8：on_event 可选，透传给 run_steps 做步骤级流式展示。
+        """
+        steps, reply, _dropped = self.prepare_steps(user_text)
+        if not steps:
+            return False, reply or "Planner 未产出可执行步骤（可能需要用户澄清）"
+        return self.run_steps(steps, on_event=on_event)
 
 
 BANNER = """\
