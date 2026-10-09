@@ -633,7 +633,9 @@ def build_app():
                     label="3D 视图")
 
         pending = gr.State(None)
-        outputs = [chatbot, view, picker, pending, confirm_btn, cancel_btn, panel]
+        # 顺序必须与各 handler 的 yield 顺序一致：
+        # (chatbot, view, picker, panel, pending, confirm_btn, cancel_btn)
+        outputs = [chatbot, view, picker, panel, pending, confirm_btn, cancel_btn]
         send_btn.click(respond, inputs=[txt, chatbot, picker, skip, pending],
                        outputs=outputs)
         txt.submit(respond, inputs=[txt, chatbot, picker, skip, pending],
