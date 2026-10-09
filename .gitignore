@@ -12,3 +12,7 @@ __pycache__/
 求职项目/
 .workbuddy/
 screenshots/
+
+# M13 React 前端
+frontend/node_modules/
+frontend/dist/
