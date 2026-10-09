@@ -513,20 +513,29 @@ def _list_sessions():
     return items
 
 
-def _sessions_dropdown_update():
-    """会话列表下拉框：显示名 + 说明（不含数据本体）。"""
-    items = _list_sessions()
-    choices = [name for name, _, _ in items]
-    labels = []
-    for name, _, data in items:
-        n = len(data.get("slice_meta") or [])
-        labels.append(f"{name} — {n} 张切片 / {data.get('n_virtual', 0)} 层虚拟")
+def _sessions_choices():
+    """会话列表的选项文案（新→旧）：标题 + 时间。"""
+    return [name for name, _, _ in _list_sessions()]
+
+
+def _session_list_update():
+    """左栏会话列表（Radio）刷新：选中新→旧，且不选中任何项。"""
+    choices = _sessions_choices()
     if not choices:
         return gr.update(choices=[], value=None,
-                        label="📂 会话（暂无归档，点「➕ 新会话」开始）"), ""
-    return (gr.update(choices=labels, value=labels[0],
-                      label=f"📂 会话（{len(choices)} 个，新的在前）"),
-            f"共 {len(choices)} 个会话，可点击「↩️ 恢复所选会话」切换")
+                         label="📂 历史会话（暂无，点「➕ 新会话」开始）")
+    return gr.update(choices=choices, value=None,
+                     label=f"📂 历史会话（{len(choices)} 个，新的在前）")
+
+
+def _sessions_dropdown_update():
+    """兼容旧的下拉框入口（保留功能，不退化）。"""
+    upd = _session_list_update()
+    n = len(upd.get("choices") or [])
+    return (gr.update(choices=upd.get("choices"),
+                      value=upd.get("choices")[0] if n else None,
+                      label=f"📂 会话（{n} 个，新的在前）"),
+            f"共 {n} 个会话，可点击「↩️ 恢复所选会话」切换")
 
 
 def _restore_from(data):
@@ -859,7 +868,8 @@ def do_new_session(history):
            if archived else "🆕 已开始新会话")
     history.append({"role": "assistant", "content": msg})
     return (history, gr.update(), gr.update(), _panel_md(), None,
-            gr.update(interactive=False), gr.update(interactive=False))
+            gr.update(interactive=False), gr.update(interactive=False),
+            _session_list_update())
 
 
 def do_restore_selected(history, session_choice):
@@ -872,14 +882,17 @@ def do_restore_selected(history, session_choice):
             break
     if target is None:
         history.append({"role": "assistant", "content": "⚠️ 没有找到所选会话。"})
-        return (history, gr.update(), gr.update(), _panel_md(), None,
-                gr.update(interactive=False), gr.update(interactive=False))
+        yield (history, gr.update(), gr.update(), _panel_md(), None,
+               gr.update(interactive=False), gr.update(interactive=False),
+               _session_list_update())
+        return
 
     data = _session_summary(target)
     history.append({"role": "assistant",
                     "content": f"💾 正在恢复会话「{data.get('title') or '未命名'}」…"})
     yield (history, gr.update(), gr.update(), _panel_md(), None,
-           gr.update(interactive=False), gr.update(interactive=False))
+           gr.update(interactive=False), gr.update(interactive=False),
+           gr.update())
     ok, msg = _restore_from(data)
     global _session_title
     _session_title = data.get("title")
@@ -892,7 +905,8 @@ def do_restore_selected(history, session_choice):
     history.append({"role": "assistant",
                     "content": (f"✅ {msg}" if ok else f"❌ 恢复失败：{msg}")})
     yield (history, gr.update(), gr.update(), _panel_md(), None,
-           gr.update(interactive=False), gr.update(interactive=False))
+           gr.update(interactive=False), gr.update(interactive=False),
+           gr.update())
 
 
 # ---------- M11-1 / M11-2 的界面回调 ----------
@@ -935,7 +949,7 @@ def refresh_all(_=None):
 # ---------- 界面 ----------
 
 def _compact_css():
-    """M11-3：压缩留白 + 隐藏 Gradio 页脚，让 1400×900 窗口一屏放下。
+    """M12：三段式布局的紧凑样式 + 隐藏 Gradio 页脚。
 
     gradio 6 里 css 必须传给 launch()（Blocks 会警告已迁移）。
     页脚没有 show_footer 参数（gradio 6 已移除），只能用 CSS 隐藏 DOM。
@@ -947,11 +961,28 @@ def _compact_css():
     .gradio-container { padding: 4px !important; max-width: 100% !important; }
     .block { padding: 4px !important; }
     .form, .wrap { gap: 4px !important; }
-    /* 标题栏更矮 */
     h1, h2, h3 { margin: 2px 0 !important; }
-    /* 折叠面板默认收起时不占空间 */
     details { margin: 2px 0 !important; }
+    /* 左栏会话列表：超过 10 个时内部滚动，不撑高页面 */
+    #session_list { max-height: 190px; overflow-y: auto; }
+    #session_list label { font-size: 12px; line-height: 1.5; }
+    /* 左栏整体不换行、贴边 */
+    #sidebar { gap: 6px !important; }
+    #sidebar .form { gap: 6px !important; }
+    /* 让聊天区吃满高度 */
+    #chatbot { min-height: 380px; }
     """
+
+
+def toggle_view(is_visible):
+    """M12-3：右栏 3D 视图显示/隐藏。
+
+    注意：不能把 Column 本身当事件输入（传进来是组件对象，真值为 True，
+    取反会恒为 False 导致永远收不起来），所以可见性用 gr.State 里的布尔值记录。
+    返回 (Column 的 visible 更新, 新的可见性状态)。
+    """
+    new_state = not bool(is_visible)
+    return gr.update(visible=new_state), new_state
 
 
 def build_app():
@@ -960,44 +991,20 @@ def build_app():
     if notice:
         init_chat.append({"role": "assistant", "content": notice})
 
+    _sess = _sessions_choices()
+    _sess_label = (f"📂 历史会话（{len(_sess)} 个，新的在前）" if _sess
+                   else "📂 历史会话（暂无，点「➕ 新会话」开始）")
+
     with gr.Blocks(title="SpatialZ 3D 组织重构智能体", fill_height=True,
                    css=_compact_css()) as demo:
         header = gr.HTML(_header_html())
         with gr.Row():
-            with gr.Column(scale=1, min_width=420):
-                chatbot = gr.Chatbot(
-                    label="聊天记录", height=340, value=init_chat)
-                with gr.Row():
-                    txt = gr.Textbox(
-                        placeholder="输入自然语言指令，如：加载 data 下的 151673 切片",
-                        label="输入", scale=4, autofocus=True)
-                    send_btn = gr.Button("发送", variant="primary", scale=1)
-                with gr.Row():
-                    skip = gr.Checkbox(label="跳过确认（--yes 等效）",
-                                       value=False, scale=2)
-                    confirm_btn = gr.Button("✅ 确认执行", variant="primary",
-                                            interactive=False, scale=1)
-                    cancel_btn = gr.Button("↩️ 取消", interactive=False, scale=1)
-
-                # M11-4：会话管理
-                with gr.Accordion("📂 会话", open=False):
-                    session_pick = gr.Dropdown(
-                        label="历史会话（新的在前）", interactive=True)
-                    sess_msg = gr.Markdown("")
-                    with gr.Row():
-                        restore_sel_btn = gr.Button("↩️ 恢复所选会话", size="sm",
-                                                    scale=2)
-                        new_btn = gr.Button("➕ 新会话", size="sm", scale=1)
-                    restore_btn = gr.Button("💾 恢复上次会话", size="sm",
-                                            interactive=bool(notice))
-                    gr.Markdown("会话记录保存在 `output/sessions/`，"
-                                "标题取该会话第一条指令的前 20 字")
-
-                # M9-2：切片信息（收起，保证一屏放下）
-                with gr.Accordion("📊 切片信息", open=False):
-                    panel = gr.Markdown(value=_panel_md())
-
-                # M11-1：LLM 设置
+            # ---------- 左栏：会话管理 + 设置 ----------
+            with gr.Column(scale=1, min_width=180, elem_id="sidebar"):
+                new_btn = gr.Button("➕ 新会话", variant="primary")
+                session_pick = gr.Radio(
+                    choices=_sess, value=None, label=_sess_label,
+                    elem_id="session_list", interactive=True)
                 with gr.Accordion("⚙️ LLM 设置", open=False):
                     _env = _read_env_file()
                     api_key_box = gr.Textbox(
@@ -1011,11 +1018,35 @@ def build_app():
                     save_llm_btn = gr.Button("💾 保存并生效", variant="primary",
                                              size="sm")
                     llm_msg = gr.Markdown("")
-            with gr.Column(scale=1, min_width=560):
+                with gr.Accordion("📊 切片信息", open=False):
+                    panel = gr.Markdown(value=_panel_md())
+
+            # ---------- 中栏：对话区 ----------
+            with gr.Column(scale=5, min_width=360):
+                with gr.Row():
+                    toggle_btn = gr.Button("🗺️ 3D视图", size="sm", scale=1)
+                    restore_btn = gr.Button("💾 恢复上次会话", size="sm", scale=1)
+                chatbot = gr.Chatbot(
+                    label="聊天记录", value=init_chat, min_height=400,
+                    autoscroll=True, show_label=False)
+                with gr.Row():
+                    txt = gr.Textbox(
+                        placeholder="输入自然语言指令，如：加载 data 下的 151673 切片",
+                        label="输入", scale=4, autofocus=True)
+                    send_btn = gr.Button("发送", variant="primary", scale=1)
+                with gr.Row():
+                    skip = gr.Checkbox(label="跳过确认（--yes 等效）",
+                                       value=False, scale=2)
+                    confirm_btn = gr.Button("✅ 确认执行", variant="primary",
+                                            interactive=False, scale=1)
+                    cancel_btn = gr.Button("↩️ 取消", interactive=False, scale=1)
+
+            # ---------- 右栏：3D 视图（默认收起，点按钮展开） ----------
+            with gr.Column(scale=2, min_width=280, visible=False) as view_col:
                 with gr.Row():
                     folder_box = gr.Textbox(
                         label="手动加入历史图文件夹",
-                        placeholder=r"例如 D:\某个目录 或 C:\Users\...\output\备份",
+                        placeholder=r"例如 D:\某个目录",
                         scale=4)
                     scan_btn = gr.Button("📂 扫描", size="sm", scale=1)
                 _initial = _collect_entries()
@@ -1024,9 +1055,7 @@ def build_app():
                     choices=_choices,
                     value=_choices[0] if _choices else None,
                     label=_label_with_count(len(_scan_html_files())),
-                    allow_custom_value=False,
-                    interactive=True,
-                )
+                    allow_custom_value=False, interactive=True)
                 with gr.Row():
                     refresh_btn = gr.Button("刷新列表", scale=1, size="sm")
                     scan_msg = gr.Markdown("", scale=5)
@@ -1038,6 +1067,9 @@ def build_app():
         # 顺序必须与各 handler 的 yield 顺序一致：
         # (chatbot, view, picker, panel, pending, confirm_btn, cancel_btn)
         outputs = [chatbot, view, picker, panel, pending, confirm_btn, cancel_btn]
+        # 新建/恢复会话的处理器多返回一个：左栏会话列表
+        sess_outputs = outputs + [session_pick]
+
         send_btn.click(respond, inputs=[txt, chatbot, picker, skip, pending],
                        outputs=outputs)
         txt.submit(respond, inputs=[txt, chatbot, picker, skip, pending],
@@ -1046,20 +1078,24 @@ def build_app():
                           outputs=outputs)
         cancel_btn.click(do_cancel, inputs=[chatbot, pending], outputs=outputs)
         restore_btn.click(do_restore, inputs=[chatbot], outputs=outputs)
-        restore_sel_btn.click(do_restore_selected,
-                              inputs=[chatbot, session_pick], outputs=outputs)
-        new_btn.click(do_new_session, inputs=[chatbot], outputs=outputs)
+        new_btn.click(do_new_session, inputs=[chatbot], outputs=sess_outputs)
+        # 左栏点历史会话 → 直接恢复
+        session_pick.change(do_restore_selected, inputs=[chatbot, session_pick],
+                            outputs=sess_outputs)
         # 下拉框选中 → 立即加载该图；刷新按钮 → 重新扫描
         picker.change(_iframe_for, inputs=[picker], outputs=[view])
         refresh_btn.click(_dropdown_update, inputs=[], outputs=[picker])
         scan_btn.click(scan_extra_folder, inputs=[folder_box],
                        outputs=[picker, scan_msg])
-        # LLM 设置：保存后顶部状态条与提示同步更新（密钥不出现在任何输出里）
         save_llm_btn.click(save_llm_settings,
                            inputs=[api_key_box, base_url_box, model_box],
                            outputs=[header, llm_msg])
-        # 启动时填充会话列表
-        demo.load(lambda: _sessions_dropdown_update(), outputs=[session_pick, sess_msg])
+        # M12-3：3D 视图栏展开/收起（可见性状态存在 State 里）
+        view_visible = gr.State(False)
+        toggle_btn.click(toggle_view, inputs=[view_visible],
+                         outputs=[view_col, view_visible])
+        # 启动时把归档会话并入左栏列表
+        demo.load(lambda: _session_list_update(), outputs=[session_pick])
     return demo
 
 
