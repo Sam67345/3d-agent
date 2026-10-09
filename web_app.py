@@ -152,7 +152,7 @@ def _iframe_for(rel_path):
     encoded = urllib.parse.quote(str(full.resolve()), safe=":/\\")
     return (
         # gradio 6 的静态文件路由为 /gradio_api/file=（旧版为 /file=）
-        f'<iframe src="/gradio_api/file={encoded}" style="width:100%;height:720px;'
+        f'<iframe src="/gradio_api/file={encoded}" style="width:100%;height:600px;'
         'border:1px solid #ddd;border-radius:8px;background:#fff;"'
         ' title="3D 视图"></iframe>'
     )
@@ -655,4 +655,5 @@ demo = build_app()
 
 if __name__ == "__main__":
     # queue 保证长任务期间界面不卡死；allowed_paths 允许 iframe 读取 output/ 下的视图文件
-    demo.queue().launch(allowed_paths=[str(OUTPUT_DIR)])
+    # show_footer=False 隐藏底部 Gradio 品牌栏（“设置 / Built with Gradio”）
+    demo.queue().launch(allowed_paths=[str(OUTPUT_DIR)], show_footer=False)
