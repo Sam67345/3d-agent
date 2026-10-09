@@ -14,8 +14,10 @@ M8 三件套：
 """
 
 import html as html_mod
+import json
 import os
 import queue
+import re
 import threading
 import time
 import urllib.parse
@@ -28,8 +30,10 @@ from agent.executor import Executor as _BaseExecutor
 
 ROOT = Path(__file__).resolve().parent
 OUTPUT_DIR = ROOT / "output"
+SESSION_JSON = OUTPUT_DIR / "session_latest.json"
 
 CIRCLED = "①②③④⑤⑥⑦⑧⑨⑩"
+_ALPHA_RE = re.compile(r"alpha([0-9]*\.?[0-9]+)")
 
 
 # ---------- Agent 初始化（仅一次，失败不崩溃，界面给出提示） ----------
@@ -200,6 +204,156 @@ def _explain_validate(result):
     return "".join(parts)
 
 
+# ---------- M9-1：会话保存与恢复 ----------
+
+def _virtual_slice_paths():
+    """session.outputs 里指向虚拟切片 h5ad 的路径（数据本体已在 output/ 下）。"""
+    out = []
+    for k, v in (_agent.session.outputs or {}).items():
+        if not v or not str(v).endswith(".h5ad"):
+            continue
+        if k.startswith("virtual_alpha") or "-alpha" in k:
+            out.append(str(v))
+    return out
+
+
+def _save_session(load_args=None, history=None):
+    """每次成功执行后落盘：只存路径引用与元信息，不复制 h5ad 数据本体。"""
+    if _agent is None:
+        return
+    s = _agent.session
+    prev = {}
+    if SESSION_JSON.exists():
+        try:
+            prev = json.loads(SESSION_JSON.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            prev = {}
+    data = {
+        "saved_at": time.strftime("%Y-%m-%d %H:%M:%S"),
+        "run_dir": str(s.run_dir) if getattr(s, "run_dir", None) else None,
+        # 记录 load_slices 的调用参数，恢复时原样交给现有技能重跑
+        "load_args": load_args or prev.get("load_args"),
+        "slice_meta": s.pair_meta or [],
+        "virtual_slice_paths": _virtual_slice_paths() or prev.get(
+            "virtual_slice_paths", []),
+        "outputs": {k: str(v) for k, v in (s.outputs or {}).items()},
+        "n_virtual": len(s.virtual_slices or []),
+        "chat_summary": [
+            {"role": m.get("role"), "content": str(m.get("content"))[:160]}
+            for m in (history or [])[-6:]],
+    }
+    try:
+        OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+        SESSION_JSON.write_text(json.dumps(data, ensure_ascii=False, indent=2),
+                                encoding="utf-8")
+    except OSError as e:
+        print(f"[session] 保存失败: {e}")
+
+
+def _session_summary():
+    """读回 json，给启动提示用；没有则返回 None。"""
+    if not SESSION_JSON.exists():
+        return None
+    try:
+        return json.loads(SESSION_JSON.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+
+
+def _startup_notice():
+    """启动提示文案：时间、已加载切片、虚拟切片层数。"""
+    data = _session_summary()
+    if not data:
+        return None
+    names = [m.get("sample_id") for m in (data.get("slice_meta") or [])]
+    names = [n for n in names if n]
+    return ("💾 **检测到上次会话**（"
+            f"{data.get('saved_at', '未知时间')}"
+            + (f"，已加载切片：{', '.join(names)}" if names else "，未记录切片")
+            + f"，已有 {data.get('n_virtual', 0)} 层虚拟切片）  \n"
+            "点【恢复会话】继续，或点【开始新会话】从零开始。")
+
+
+def _restore_session():
+    """恢复：调用现有 load_slices 技能重放加载，虚拟切片读回已存在的 h5ad。
+
+    返回 (ok, message)；失败时给出原因，由调用方降级为新会话。
+    """
+    data = _session_summary()
+    if not data:
+        return False, "没有找到会话文件 output/session_latest.json"
+    args = data.get("load_args") or {}
+    if not args:
+        return False, "会话记录里没有 load_slices 参数，无法恢复"
+
+    try:
+        ok, msg = _agent.executor.run_step("load_slices", dict(args))
+    except Exception as e:  # noqa: BLE001
+        return False, f"重放 load_slices 失败: {type(e).__name__}: {e}"
+    if not ok:
+        return False, f"重放 load_slices 失败: {msg}"
+
+    # 虚拟切片：读回 output/ 下已存在的 h5ad 本体（不重新计算）
+    import anndata as ad
+    n = 0
+    for p in data.get("virtual_slice_paths") or []:
+        try:
+            if Path(p).exists():
+                _agent.session.virtual_slices.append(ad.read_h5ad(p))
+                n += 1
+        except Exception as e:  # noqa: BLE001
+            print(f"[session] 恢复虚拟切片失败 {p}: {e}")
+    if data.get("run_dir"):
+        _agent.session.run_dir = Path(data["run_dir"])
+    for k, v in (data.get("outputs") or {}).items():
+        _agent.session.outputs.setdefault(k, v)
+    return True, (f"已恢复会话：{len(_agent.session.all_slices)} 张真实切片、"
+                  f"{n} 层虚拟切片")
+
+
+# ---------- M9-2：切片信息面板 ----------
+
+def _panel_md():
+    """常驻信息面板：已加载切片 / 虚拟切片层数与 alpha / 输出目录。
+
+    数据全部取自 session（load_slices 写的 meta），不做任何推断或编造。
+    """
+    if _agent is None:
+        return "### 📊 切片信息面板\n（Agent 未就绪）"
+    s = _agent.session
+    lines = ["### 📊 切片信息面板"]
+
+    meta = s.pair_meta or []
+    if meta:
+        lines.append("**已加载切片**")
+        lines.append("| 名称 | spots | 基因 |")
+        lines.append("|---|---:|---:|")
+        for m in meta:
+            lines.append(f"| {m.get('sample_id', '-')} | {m.get('n_spots', '-')} "
+                         f"| {m.get('n_genes', '-')} |")
+    else:
+        lines.append("**已加载切片**：无（先说「加载 …」）")
+
+    vs = s.virtual_slices or []
+    if vs:
+        alphas = []
+        for v in vs:
+            sid = ""
+            try:
+                sid = str(v.obs["slice_id"].iloc[0])
+            except (KeyError, IndexError, AttributeError):
+                sid = ""
+            m = _ALPHA_RE.search(sid)
+            alphas.append(m.group(1) if m else (sid or "?"))
+        lines.append(f"**虚拟切片**：{len(vs)} 层（alpha {('、'.join(alphas))}）")
+    else:
+        lines.append("**虚拟切片**：0 层")
+
+    run_dir = getattr(s, "run_dir", None)
+    lines.append(f"**输出目录**：`{run_dir}`" if run_dir else "**输出目录**：未设置")
+    return "\n".join(lines)
+
+
 # ---------- M8-1：计划卡片文本 ----------
 
 def _fmt_args(args):
@@ -251,7 +405,10 @@ def _execute_steps(steps, history, before_top, current_pick):
 
     history = list(history)
     history.append({"role": "assistant", "content": "🚀 开始执行…"})
-    yield history, gr.update(), gr.update()
+    yield history, gr.update(), gr.update(), _panel_md()
+    # 记录本次计划里的 load_slices 参数，成功后写进会话文件供恢复用
+    load_args = next((s.get("args") for s in steps if s["skill"] == "load_slices"),
+                     None)
 
     finished = False
     deadline = time.time() + 3600  # 兜底：最多等 1 小时，避免线程静默退出时空转
@@ -297,9 +454,9 @@ def _execute_steps(steps, history, before_top, current_pick):
             base = cur.split("\n<sub>")[0]
             history[-1] = {"role": "assistant",
                            "content": base + ("\n" + tail if tail else "")}
-        yield history, gr.update(), gr.update()
+        yield history, gr.update(), gr.update(), _panel_md()
 
-    # 收尾：总结 + 结果解读 + 视图刷新
+    # 收尾：总结 + 结果解读 + 视图刷新 + 自动保存会话
     history.append({"role": "assistant",
                     "content": ("✅ 全部完成" if ok else f"❌ {message}")})
     for skill, result in results:
@@ -309,7 +466,9 @@ def _execute_steps(steps, history, before_top, current_pick):
                 history.append({"role": "assistant", "content": text})
     view, drop = _finish_view_update(before_top, current_pick)
     _agent.executor.sink = None
-    yield history, view, drop
+    if ok:
+        _save_session(load_args=load_args, history=history)
+    yield history, view, drop, _panel_md()
 
 
 # ---------- 聊天回调入口 ----------
@@ -319,7 +478,8 @@ def respond(user_text, history, current_pick, skip_confirm, pending):
     user_text = (user_text or "").strip()
     if not user_text:
         yield (history, gr.update(), gr.update(), gr.update(),
-               gr.update(interactive=False), gr.update(interactive=False))
+               gr.update(interactive=False), gr.update(interactive=False),
+               gr.update())
         return
 
     history = list(history or [])
@@ -329,26 +489,30 @@ def respond(user_text, history, current_pick, skip_confirm, pending):
         history.append({"role": "assistant",
                         "content": f"❌ {_agent_error or 'Agent 不可用'}"})
         yield (history, gr.update(), gr.update(), None,
-               gr.update(interactive=False), gr.update(interactive=False))
+               gr.update(interactive=False), gr.update(interactive=False),
+               gr.update())
         return
 
     history.append({"role": "assistant", "content": "🧠 正在规划…"})
     yield (history, gr.update(), gr.update(), gr.update(),
-           gr.update(interactive=False), gr.update(interactive=False))
+           gr.update(interactive=False), gr.update(interactive=False),
+           _panel_md())
 
     try:
         steps, reply, _dropped = _agent.prepare_steps(user_text)
     except Exception as e:  # noqa: BLE001
         history[-1] = {"role": "assistant", "content": f"❌ 规划失败: {e}"}
         yield (history, gr.update(), gr.update(), None,
-               gr.update(interactive=False), gr.update(interactive=False))
+               gr.update(interactive=False), gr.update(interactive=False),
+               _panel_md())
         return
 
     if not steps:
         history[-1] = {"role": "assistant",
                        "content": (reply or "❌ 没有可执行步骤，请换个说法或先加载数据")}
         yield (history, gr.update(), gr.update(), None,
-               gr.update(interactive=False), gr.update(interactive=False))
+               gr.update(interactive=False), gr.update(interactive=False),
+               _panel_md())
         return
 
     if skip_confirm:
@@ -364,14 +528,16 @@ def respond(user_text, history, current_pick, skip_confirm, pending):
     # 计划确认卡片：等用户点按钮
     history[-1] = {"role": "assistant", "content": _plan_card(steps, reply)}
     yield (history, gr.update(), gr.update(), steps,
-           gr.update(interactive=True), gr.update(interactive=True))
+           gr.update(interactive=True), gr.update(interactive=True),
+           _panel_md())
 
 
 def do_confirm(history, current_pick, pending):
     """用户点【确认执行】。"""
     if not pending:
         return (history, gr.update(), gr.update(), None,
-                gr.update(interactive=False), gr.update(interactive=False))
+                gr.update(interactive=False), gr.update(interactive=False),
+                _panel_md())
     before = _scan_html_files()
     before_top = before[0][0] if before else None
     for upd in _execute_steps(pending, list(history or []), before_top,
@@ -385,18 +551,51 @@ def do_cancel(history, pending):
     history = list(history or [])
     history.append({"role": "assistant", "content": "↩️ 已取消，等待下一条指令。"})
     return (history, gr.update(), gr.update(), None,
-            gr.update(interactive=False), gr.update(interactive=False))
+            gr.update(interactive=False), gr.update(interactive=False),
+            _panel_md())
+
+
+def do_restore(history):
+    """用户点【恢复会话】：重放 load_slices + 读回虚拟切片。"""
+    history = list(history or [])
+    history.append({"role": "assistant", "content": "💾 正在恢复上次会话…"})
+    yield (history, gr.update(), gr.update(), None,
+           gr.update(interactive=False), gr.update(interactive=False),
+           _panel_md())
+    ok, msg = _restore_session()
+    history.append({"role": "assistant",
+                    "content": (f"✅ {msg}" if ok else
+                                f"❌ 恢复失败：{msg}\n已切换为新会话。")})
+    yield (history, gr.update(), gr.update(), None,
+           gr.update(interactive=False), gr.update(interactive=False),
+           _panel_md())
+
+
+def do_new_session(history):
+    """用户点【开始新会话】：忽略旧会话记录。"""
+    history = list(history or [])
+    history.append({"role": "assistant",
+                    "content": "🆕 已开始新会话（旧记录仍在 "
+                               "output/session_latest.json，下次启动可再恢复）。"})
+    return (history, gr.update(), gr.update(), None,
+            gr.update(interactive=False), gr.update(interactive=False),
+            _panel_md())
 
 
 # ---------- 界面 ----------
 
 def build_app():
+    notice = _startup_notice()
+    init_chat = []
+    if notice:
+        init_chat.append({"role": "assistant", "content": notice})
+
     with gr.Blocks(title="SpatialZ 3D 组织重构智能体") as demo:
         gr.HTML(_header_html())
         with gr.Row():
             with gr.Column(scale=1):
                 chatbot = gr.Chatbot(
-                    label="聊天记录", height=460)
+                    label="聊天记录", height=420, value=init_chat)
                 with gr.Row():
                     txt = gr.Textbox(
                         placeholder="输入自然语言指令，如：加载 data 下的 151673 切片",
@@ -408,6 +607,12 @@ def build_app():
                     confirm_btn = gr.Button("✅ 确认执行", variant="primary",
                                             interactive=False, scale=1)
                     cancel_btn = gr.Button("↩️ 取消", interactive=False, scale=1)
+                with gr.Row():
+                    restore_btn = gr.Button("💾 恢复会话", size="sm",
+                                            interactive=bool(notice), scale=1)
+                    new_btn = gr.Button("🆕 开始新会话", size="sm",
+                                        interactive=bool(notice), scale=1)
+                panel = gr.Markdown(value=_panel_md(), label="切片信息")
             with gr.Column(scale=1):
                 _initial = _scan_html_files()
                 _choices = [name for name, _ in _initial]
@@ -428,7 +633,7 @@ def build_app():
                     label="3D 视图")
 
         pending = gr.State(None)
-        outputs = [chatbot, view, picker, pending, confirm_btn, cancel_btn]
+        outputs = [chatbot, view, picker, pending, confirm_btn, cancel_btn, panel]
         send_btn.click(respond, inputs=[txt, chatbot, picker, skip, pending],
                        outputs=outputs)
         txt.submit(respond, inputs=[txt, chatbot, picker, skip, pending],
@@ -436,6 +641,8 @@ def build_app():
         confirm_btn.click(do_confirm, inputs=[chatbot, picker, pending],
                           outputs=outputs)
         cancel_btn.click(do_cancel, inputs=[chatbot, pending], outputs=outputs)
+        restore_btn.click(do_restore, inputs=[chatbot], outputs=outputs)
+        new_btn.click(do_new_session, inputs=[chatbot], outputs=outputs)
         # 下拉框选中 → 立即加载该图；刷新按钮 → 重新扫描
         picker.change(_iframe_for, inputs=[picker], outputs=[view])
         refresh_btn.click(_dropdown_update, inputs=[], outputs=[picker])
