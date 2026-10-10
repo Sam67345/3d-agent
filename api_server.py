@@ -116,6 +116,29 @@ def _agent_ready():
         raise HTTPException(503, W._agent_error or "Agent 未就绪（请先配置 LLM）")
 
 
+def _run_steps(steps):
+    """执行步骤并收集每步的结构化结果。
+
+    Gradio 版是在 UI 层用事件流拿到 validate 的结果再调 _explain_validate 生成中文解读；
+    这里照做一遍，否则 React 前端只能看到"完成 N 个步骤"，看不到任何质量数据。
+    """
+    results: list[tuple[str, dict]] = []
+
+    def on_event(ev):
+        if ev.get("type") == "step_done":
+            results.append((ev.get("skill", ""), ev.get("result") or {}))
+
+    ok, message = W._agent.run_steps(steps, on_event=on_event)
+    interpretations, validations = [], []
+    for skill, r in results:
+        if skill == "validate":
+            text = W._explain_validate(r)
+            if text:
+                interpretations.append(text)
+            validations.append(r)
+    return ok, message, interpretations, validations
+
+
 def _mask_key(key: str) -> str:
     """脱敏：只保留末 4 位。绝不返回完整 key。"""
     if not key:
@@ -141,25 +164,27 @@ def api_chat(req: ChatReq):
         return {"status": "confirm", "reply": reply, "steps": steps,
                 "plan_card": W._plan_card(steps, reply), "panel": W._panel_md()}
 
-    ok, message = W._agent.run_steps(steps)
+    ok, message, interpretations, validations = _run_steps(steps)
     if ok:
         W._save_session(load_args=next(
             (s.get("args") for s in steps if s["skill"] == "load_slices"), None),
             history=[{"role": "user", "content": msg}])
     return {"status": "done" if ok else "error", "reply": message,
-            "steps": steps, "dropped": dropped, "panel": W._panel_md()}
+            "steps": steps, "dropped": dropped, "panel": W._panel_md(),
+            "interpretations": interpretations, "validations": validations}
 
 
 @app.post("/api/confirm")
 def api_confirm(req: ConfirmReq):
     """用户点了【确认执行】：按已确认的步骤执行。"""
     _agent_ready()
-    ok, message = W._agent.run_steps(req.steps)
+    ok, message, interpretations, validations = _run_steps(req.steps)
     if ok:
         W._save_session(load_args=next(
             (s.get("args") for s in req.steps if s["skill"] == "load_slices"), None))
     return {"status": "done" if ok else "error", "reply": message,
-            "panel": W._panel_md()}
+            "panel": W._panel_md(),
+            "interpretations": interpretations, "validations": validations}
 
 
 @app.post("/api/cancel")

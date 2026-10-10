@@ -89,7 +89,9 @@ export default function App() {
         push("assistant", r.plan_card || r.reply);
         setPending(r.steps);
       } else {
-        push("assistant", r.reply);
+        // 步骤汇总 + 质量解读（validate 的中文判读）一起显示
+        const extra = (r.interpretations || []).join("\n\n");
+        push("assistant", extra ? `${r.reply}\n\n${extra}` : r.reply);
         setPending(null);
       }
       await Promise.all([refreshSide(), refreshFigures()]);
@@ -105,7 +107,8 @@ export default function App() {
     setBusy(true);
     try {
       const r = await api.confirm(pending);
-      push("assistant", r.reply);
+      const extra = (r.interpretations || []).join("\n\n");
+      push("assistant", extra ? `${r.reply}\n\n${extra}` : r.reply);
       setPending(null);
       await Promise.all([refreshSide(), refreshFigures()]);
     } catch (e) {

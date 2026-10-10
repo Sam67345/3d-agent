@@ -15,6 +15,10 @@ export type ChatReply = {
   plan_card?: string;
   panel?: string;
   dropped?: unknown[];
+  /** validate 等技能的中文解读（与 Gradio 版同源，由 _explain_validate 生成） */
+  interpretations?: string[];
+  /** validate 的结构化结果，前端可自行渲染 */
+  validations?: Record<string, unknown>[];
 };
 
 export type SessionItem = {

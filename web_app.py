@@ -556,6 +556,12 @@ def _restore_from(data):
     if not ok:
         return False, f"重放 load_slices 失败: {msg}"
 
+    # 恢复 = 把该会话的虚拟层**重置**成存档里的那些，而不是接着现有的往后加。
+    # 否则重复点「恢复会话」会层层累加（4 层 × 3 次 = 12 层），且面板显示的层数
+    # 与会话文件里记录的对不上。顺带清掉 dense（它是基于旧虚拟层合并出来的）。
+    _agent.session.virtual_slices.clear()
+    _agent.session.dense = None
+
     # 虚拟切片：读回 output/ 下已存在的 h5ad 本体（不重新计算）
     import anndata as ad
     n = 0
@@ -571,7 +577,9 @@ def _restore_from(data):
     for k, v in (data.get("outputs") or {}).items():
         _agent.session.outputs.setdefault(k, v)
     return True, (f"已恢复会话「{data.get('title') or '未命名'}」："
-                  f"{len(_agent.session.all_slices)} 张真实切片、{n} 层虚拟切片")
+                  f"{len(_agent.session.all_slices)} 张真实切片、"
+                  f"{len(_agent.session.virtual_slices)} 层虚拟切片"
+                  + (f"（其中 {n} 层从文件读回）" if n != len(_agent.session.virtual_slices) else ""))
 
 
 def _restore_session():
