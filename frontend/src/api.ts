@@ -97,6 +97,19 @@ export const api = {
       body: JSON.stringify({ folder }),
     }),
 
+  /** 上传前端弹窗选中的本地 html（浏览器拿不到真实路径，只能传内容） */
+  uploadFigures: (files: { name: string; content_b64: string }[]) =>
+    req<{
+      status: string;
+      saved: string[];
+      skipped: string[];
+      figures: FigureItem[];
+      label: string;
+    }>("/api/figures/upload", {
+      method: "POST",
+      body: JSON.stringify(files),
+    }),
+
   llmConfig: () =>
     req<{ base_url: string; model: string; api_key_masked: string; has_key: boolean }>(
       "/api/llm-config",

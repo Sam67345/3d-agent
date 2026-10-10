@@ -31,6 +31,10 @@ export default function App() {
   const [figures, setFigures] = useState<FigureItem[]>([]);
   const [figLabel, setFigLabel] = useState("");
   const [current, setCurrent] = useState<string>("");
+  const [uploading, setUploading] = useState(false);
+  const [figMsg, setFigMsg] = useState("");
+  const [showPathInput, setShowPathInput] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -152,6 +156,41 @@ export default function App() {
     const next = !showView;
     setShowView(next);
     if (next && figures.length === 0) await refreshFigures();
+  };
+
+  /** 弹窗选中的本地 html → base64 上传（浏览器拿不到本地路径，只能传内容） */
+  const onPickFiles = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    e.target.value = "";                 // 允许重复选同一个文件
+    if (!files.length) return;
+    setUploading(true);
+    setFigMsg(`正在导入 ${files.length} 个文件…`);
+    try {
+      const payload = await Promise.all(
+        files.map(async (f) => {
+          const buf = await f.arrayBuffer();
+          let bin = "";
+          const bytes = new Uint8Array(buf);
+          for (let i = 0; i < bytes.length; i += 0x8000) {
+            bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+          }
+          return { name: f.name, content_b64: btoa(bin) };
+        }),
+      );
+      const r = await api.uploadFigures(payload);
+      setFigures(r.figures);
+      setFigLabel(r.label);
+      if (r.saved.length) {
+        setCurrent(r.saved[0]);
+        setFigMsg(`✅ 已导入 ${r.saved.length} 个：${r.saved.join("、")}`);
+      } else {
+        setFigMsg(`⚠ 未导入：${r.skipped.join("；") || "未知原因"}`);
+      }
+    } catch (err) {
+      setFigMsg(`❌ 导入失败：${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setUploading(false);
+    }
   };
 
   return (
@@ -371,29 +410,62 @@ export default function App() {
               ))}
             </select>
             <div className="text-[11px] text-slate-400">{figLabel}</div>
+
+            {/* 弹窗选择本地 html 文件（浏览器不允许网页拿到真实路径，所以传文件内容） */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".html,text/html"
+              multiple
+              className="hidden"
+              onChange={onPickFiles}
+            />
             <div className="flex gap-2">
-              <input
-                id="folder-input"
-                placeholder="手动加入文件夹"
-                className="min-w-0 flex-1 rounded-lg border border-slate-200 px-2 py-1.5 text-[12px]"
-              />
               <button
-                onClick={async () => {
-                  const el = document.getElementById("folder-input") as HTMLInputElement | null;
-                  if (!el?.value.trim()) return;
-                  try {
-                    await api.addFolder(el.value.trim());
-                    el.value = "";
-                    await refreshFigures();
-                  } catch (e) {
-                    alert(`加入失败：${e instanceof Error ? e.message : String(e)}`);
-                  }
-                }}
-                className="shrink-0 rounded-lg border border-slate-200 px-2.5 py-1.5 text-[12px] text-slate-600 hover:border-indigo-300"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="flex-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-[12px] text-slate-700 transition hover:border-indigo-300 hover:text-indigo-600 disabled:opacity-50"
               >
-                扫描
+                {uploading ? "导入中…" : "📄 选择本地 HTML"}
+              </button>
+              <button
+                onClick={() => setShowPathInput((v) => !v)}
+                className="shrink-0 rounded-lg border border-slate-200 px-2.5 py-1.5 text-[12px] text-slate-500 hover:border-indigo-300"
+                title="也可以直接输入服务器上的文件夹路径"
+              >
+                路径
               </button>
             </div>
+            {figMsg && (
+              <div className="break-words text-[11.5px] text-slate-500">{figMsg}</div>
+            )}
+
+            {showPathInput && (
+              <div className="flex gap-2">
+                <input
+                  id="folder-input"
+                  placeholder="服务器上的文件夹路径"
+                  className="min-w-0 flex-1 rounded-lg border border-slate-200 px-2 py-1.5 text-[12px]"
+                />
+                <button
+                  onClick={async () => {
+                    const el = document.getElementById("folder-input") as HTMLInputElement | null;
+                    if (!el?.value.trim()) return;
+                    try {
+                      const r = await api.addFolder(el.value.trim());
+                      el.value = "";
+                      setFigMsg(`✅ 已加入 ${r.added} 个 html（来自该文件夹）`);
+                      await refreshFigures();
+                    } catch (e) {
+                      setFigMsg(`❌ ${e instanceof Error ? e.message : String(e)}`);
+                    }
+                  }}
+                  className="shrink-0 rounded-lg border border-slate-200 px-2.5 py-1.5 text-[12px] text-slate-600 hover:border-indigo-300"
+                >
+                  扫描
+                </button>
+              </div>
+            )}
             <div className="min-h-0 flex-1 overflow-hidden rounded-xl border border-slate-200 bg-white">
               {current ? (
                 <iframe

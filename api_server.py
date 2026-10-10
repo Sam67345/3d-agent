@@ -66,6 +66,12 @@ class LLMConfigReq(BaseModel):
     model: str = Field("", description="留空表示不改")
 
 
+class UploadedFile(BaseModel):
+    """前端弹窗选中的一个 html 文件（base64 传输，避免依赖 multipart 解析）。"""
+    name: str = Field(..., description="原始文件名")
+    content_b64: str = Field(..., description="文件内容的 base64")
+
+
 # ---------------- 路径安全 ----------------
 
 def _safe_figure_path(rel_path: str) -> Path:
@@ -263,6 +269,51 @@ def api_figures_folder(req: FolderReq):
     if folder not in _extra_dirs:
         _extra_dirs.append(folder)
     return {"status": "ok", "added": len(found), "figures": api_figures()["figures"]}
+
+
+@app.post("/api/figures/upload")
+def api_figures_upload(items: list[UploadedFile]):
+    """接收前端弹窗选中的本地 html 文件，存到 output/imported/ 后即可在右栏查看。
+
+    为什么不直接用本地路径：浏览器的安全策略不允许网页拿到用户文件的真实路径，
+    所以只能把文件内容传上来。落到 output/ 下之后它们就是普通的"历史 3D 图"。
+    """
+    import base64
+
+    saved, skipped = [], []
+    target_dir = W.OUTPUT_DIR / "imported"
+    target_dir.mkdir(parents=True, exist_ok=True)
+    stamp = time.strftime("%Y%m%d_%H%M%S")
+    for it in items:
+        name = Path(it.name).name  # 去掉任何目录成分，防路径穿越
+        if not name.lower().endswith(".html"):
+            skipped.append(f"{name}（不是 .html）")
+            continue
+        try:
+            raw = base64.b64decode(it.content_b64, validate=True)
+        except Exception:  # noqa: BLE001
+            skipped.append(f"{name}（内容解码失败）")
+            continue
+        if len(raw) > 40 * 1024 * 1024:
+            skipped.append(f"{name}（超过 40MB）")
+            continue
+        dest = target_dir / f"{Path(name).stem}_{stamp}.html"
+        dest.write_bytes(raw)
+        saved.append(dest.relative_to(W.OUTPUT_DIR).as_posix())
+    if saved:
+        # 让本次新增立刻出现在列表里（output/ 一级子目录扫描会覆盖 imported/）
+        entries = W._collect_entries()
+    else:
+        entries = W._collect_entries()
+    return {
+        "status": "ok",
+        "saved": saved,
+        "skipped": skipped,
+        "figures": [{"name": n, "path": n, "abs": str(p), "mtime": m}
+                    for n, p, m in entries],
+        "label": W._label_with_count(len(W._scan_html_files()),
+                                     sum(1 for n, _, _ in entries if n.startswith("📁"))),
+    }
 
 
 @app.get("/api/figures/file")
