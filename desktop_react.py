@@ -23,10 +23,16 @@ Chrome_WidgetWin_0 unregister 错误），窗口白屏。方案 B 直接用 `npm
   python desktop_react.py            # 正常开窗口
   python desktop_react.py --probe    # 自检：开窗 + 验证界面渲染 + 自动关窗
   python desktop_react.py --rebuild  # 强制重新构建前端后再开窗
+
+【无黑窗启动】用 pythonw.exe 启动即可不弹控制台（启动React桌面端.bat 就是这么做的）。
+注意 pythonw 下 sys.stdout / sys.stderr 是 None，直接 print 会抛异常，
+所以本文件所有输出都走 log()：写 output/desktop_react.log，有控制台时同时打印。
+启动失败时用 MessageBox 弹窗告知用户（否则pythonw 静默失败会让人一头雾水）。
 """
 
 from __future__ import annotations
 
+import logging
 import os
 import socket
 import subprocess
@@ -40,7 +46,7 @@ ROOT = Path(__file__).resolve().parent
 FRONTEND = ROOT / "frontend"
 DIST = FRONTEND / "dist"
 OUTPUT_DIR = ROOT / "output"
-LOG_FILE = OUTPUT_DIR / "api_server.log"
+LOG_FILE = OUTPUT_DIR / "desktop_react.log"
 
 API_PORT = 7861
 WEB_PORT = 3001          # 方案 B 不用，仅按要求做占用检测
@@ -49,6 +55,56 @@ WINDOW_W, WINDOW_H = 1400, 900
 
 CREATE_NO_WINDOW = 0x08000000 if os.name == "nt" else 0
 CREATE_NEW_PROCESS_GROUP = 0x00000200 if os.name == "nt" else 0
+
+IS_PYWINW = Path(sys.executable).name.lower().startswith("pythonw")
+
+
+# ---------------- 日志（兼容 pythonw 无控制台） ----------------
+
+def _setup_logging() -> None:
+    """把 logging 接到文件。
+
+    只挂FileHandler：如果同时挂 StreamHandler，而 stdout 被重定向到文件，
+    每条日志会写两遍（FileHandler 一次 + StreamHandler 一次）。
+    有控制台时想要屏幕输出，交给 log() 里的 print 即可。
+    """
+    try:
+        OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    except OSError:
+        return
+    root = logging.getLogger()
+    for h in list(root.handlers):
+        root.removeHandler(h)
+    try:
+        fh = logging.FileHandler(LOG_FILE, encoding="utf-8")
+    except OSError:
+        return
+    fh.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
+    root.addHandler(fh)
+    root.setLevel(logging.INFO)
+
+
+def log(msg: str) -> None:
+    """统一输出：写日志文件 + stdout 非空时也打印（pythonw 下不打印）。"""
+    logging.getLogger("desktop").info(msg)
+    if sys.stdout is not None:
+        try:
+            print(msg, flush=True)
+        except Exception:  # noqa: BLE001
+            pass
+
+
+def fatal(msg: str) -> None:
+    """致命错误：pythonw 下没有控制台，用弹窗告知，否则用户看不到任何信息。"""
+    log(msg)
+    if IS_PYWINW and os.name == "nt":
+        try:
+            import ctypes
+            ctypes.windll.user32.MessageBoxW(
+                0, f"{msg}\n\n详情见日志：\n{LOG_FILE}",
+                "SpatialZ 3D Agent 启动失败", 0x10)   # 0x10 = MB_ICONERROR
+        except Exception:  # noqa: BLE001
+            pass
 
 
 # ---------------- 端口 / HTTP 工具 ----------------
@@ -84,12 +140,14 @@ def precheck_ports() -> None:
     detail = "、".join(
         f"{p}（{'API / 界面服务' if p == API_PORT else '前端 dev server'}）"
         for p in busy)
-    print("=" * 64, flush=True)
-    print(f"✗ 端口已被占用：{detail}", flush=True)
-    print("  是不是已经有一个实例在运行了？", flush=True)
-    print("  请先关闭已打开的桌面端窗口；若找不到窗口，"
-          "在任务管理器里结束 python.exe / node.exe 再试。", flush=True)
-    print("=" * 64, flush=True)
+    log("=" * 64)
+    log(f"✗ 端口已被占用：{detail}")
+    log("  是不是已经有一个实例在运行了？")
+    log("  请先关闭已打开的桌面端窗口；若找不到窗口，"
+        "在任务管理器里结束 python.exe / node.exe 再试。")
+    log("=" * 64)
+    fatal(f"端口已被占用：{detail}\n\n是不是已经有一个实例在运行了？\n"
+          "请先关闭已打开的桌面端窗口再试。")
     sys.exit(2)
 
 
@@ -100,20 +158,20 @@ def build_frontend() -> bool:
     npm = "npm.cmd" if os.name == "nt" else "npm"
     env = dict(os.environ)
     env["FORCE_COLOR"] = "0"
-    print("[构建] 正在执行 npm run build（首次约需十几秒）…", flush=True)
+    log("[构建] 正在执行 npm run build（首次约需十几秒）…")
     try:
         p = subprocess.run([npm, "run", "build"], cwd=str(FRONTEND), env=env,
                            capture_output=True, text=True,
                            creationflags=CREATE_NO_WINDOW, timeout=420)
     except subprocess.TimeoutExpired:
-        print("✗ npm run build 超时", flush=True)
+        log("✗ npm run build 超时")
         return False
     if p.returncode != 0:
-        print("✗ 前端构建失败，错误输出：", flush=True)
-        print((p.stdout or "")[-1500:], flush=True)
-        print((p.stderr or "")[-800:], flush=True)
+        log("✗ 前端构建失败，错误输出：")
+        log((p.stdout or "")[-1500:])
+        log((p.stderr or "")[-800:])
         return False
-    print(f"[构建] 完成，产物在 {DIST}", flush=True)
+    log(f"[构建] 完成，产物在 {DIST}")
     return True
 
 
@@ -147,7 +205,10 @@ def serve_api_and_static():
     app.mount("/", StaticFiles(directory=str(DIST), html=True), name="frontend")
 
     config = uvicorn.Config(app, host="127.0.0.1", port=API_PORT,
-                            log_level="warning")
+                            log_level="warning",
+                            # 日志已在 _setup_logging() 里接到文件；不让 uvicorn
+                            # 再建自己的 stderr handler（pythonw 下 stderr 是 None）
+                            log_config=None)
     server = uvicorn.Server(config)
     t = threading.Thread(target=server.run, daemon=True, name="uvicorn")
     t.start()
@@ -191,11 +252,11 @@ def run_probe() -> int:
     threading.Thread(target=probe, daemon=True).start()
     webview.start()
 
-    print("---- 自检结果 ----", flush=True)
+    log("---- 自检结果 ----")
     if result:
-        print(json.dumps(result, ensure_ascii=False, indent=2), flush=True)
+        log(json.dumps(result, ensure_ascii=False, indent=2))
     else:
-        print("✗ 未能确认界面渲染（evaluate_js 拿不到按钮）", flush=True)
+        log("✗ 未能确认界面渲染（evaluate_js 拿不到按钮）")
     return 0 if result else 1
 
 
@@ -204,22 +265,26 @@ def run_probe() -> int:
 def main() -> int:
     probe_mode = "--probe" in sys.argv
     force_build = "--rebuild" in sys.argv
+    _setup_logging()
+    log(f"=== 启动桌面端（{'pythonw 无黑窗模式' if IS_PYWINW else '控制台模式'}）===")
     precheck_ports()
 
     server = None
     try:
         if not ensure_dist(force=force_build):
+            fatal("前端构建失败，无法启动界面。\n\n"
+                  "可以手动在 frontend 目录执行：npm install && npm run build")
             return 3
 
-        print("[1/2] 启动服务（API + 前端静态文件，同一进程）…", flush=True)
+        log("[1/2] 启动服务（API + 前端静态文件，同一进程）…")
         server, _thread = serve_api_and_static()
         if not wait_port(API_PORT, 40):
-            print("✗ 服务 40 秒内没就绪", flush=True)
+            fatal("服务 40 秒内没就绪，启动中止。\n\n"
+                  f"请查看日志：{LOG_FILE}")
             return 4
         if not http_ok(f"http://127.0.0.1:{API_PORT}/api/health"):
-            print("⚠ /api/health 无响应（若Agent 未配置 LLM，界面会提示）", flush=True)
-        print(f"[2/2] 已就绪 → http://127.0.0.1:{API_PORT}/", flush=True)
-
+            log("⚠ /api/health 无响应（若Agent 未配置 LLM，界面会提示）")
+        log(f"[2/2] 已就绪 → http://127.0.0.1:{API_PORT}/")
         if probe_mode:
             return run_probe()
 
@@ -227,30 +292,29 @@ def main() -> int:
         window = webview.create_window(
             WINDOW_TITLE, f"http://127.0.0.1:{API_PORT}/",
             width=WINDOW_W, height=WINDOW_H)
-        window.events.loaded += lambda: print("[窗口] 界面已加载完成", flush=True)
-        print(f"窗口已打开：{WINDOW_TITLE}（{WINDOW_W}×{WINDOW_H}）", flush=True)
-        print("关闭该窗口即退出（没有额外进程会被留下）。", flush=True)
+        window.events.loaded += lambda: log("[窗口] 界面已加载完成")
+        log(f"窗口已打开：{WINDOW_TITLE}（{WINDOW_W}×{WINDOW_H}）")
+        log("关闭该窗口即退出（没有额外进程会被留下）。")
         webview.start()
         return 0
     except KeyboardInterrupt:
-        print("\n已中断，正在关闭…", flush=True)
+        log("\n已中断，正在关闭…")
         return 130
+    except Exception as e:  # noqa: BLE001
+        # pythonw 下没有控制台，未捕获异常会静默退出，必须兜住并弹窗
+        import traceback
+        log("✗ 启动过程异常：" + traceback.format_exc())
+        fatal(f"启动时发生错误：\n{type(e).__name__}: {e}")
+        return 1
     finally:
         if server is not None:
             server.should_exit = True
-            print("[清理] 正在停止服务…", flush=True)
+            log("[清理] 正在停止服务…")
             time.sleep(1.2)
         if port_busy(API_PORT):
-            print(f"[警告] 端口 {API_PORT} 仍被占用，请检查是否有残留进程", flush=True)
+            log(f"[警告] 端口 {API_PORT} 仍被占用，请检查是否有残留进程")
         else:
-            print("[清理] 端口已释放，进程即将退出。", flush=True)
-        try:
-            if OUTPUT_DIR.exists():
-                (OUTPUT_DIR / "desktop_react.log").write_text(
-                    f"桌面端启动于 {time.strftime('%Y-%m-%d %H:%M:%S')}\n",
-                    encoding="utf-8")
-        except OSError:
-            pass
+            log("[清理] 端口已释放，进程即将退出。")
 
 
 if __name__ == "__main__":
