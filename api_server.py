@@ -56,6 +56,10 @@ class SessionRestoreReq(BaseModel):
     path: str = Field(..., description="会话 json 文件路径")
 
 
+class SessionDeleteReq(BaseModel):
+    path: str = Field(..., description="要删除的会话 json 文件路径")
+
+
 class FolderReq(BaseModel):
     folder: str = Field(..., description="要加入扫描的文件夹路径")
 
@@ -215,6 +219,47 @@ def api_sessions_new():
             "archived": Path(archived).name if archived else None,
             "sessions": api_sessions()["sessions"],
             "panel": W._panel_md()}
+
+
+@app.post("/api/sessions/delete")
+def api_sessions_delete(req: SessionDeleteReq):
+    """删除一个归档会话文件。
+
+    安全：只允许删 output/ 目录内的 .json（realpath 校验），防任意文件删除。
+    连带处理：若删掉的正是当前 session_latest.json 对应的那份，
+    一起删掉 session_latest.json，避免下次「恢复上次会话」又把它捞回来。
+    """
+    p = Path(req.path)
+    try:
+        real = p.resolve()
+        real.relative_to(W.OUTPUT_DIR.resolve())
+    except (OSError, ValueError):
+        raise HTTPException(403, "只能删除 output/ 目录内的会话文件")
+    if real.suffix.lower() != ".json" or not real.is_file():
+        raise HTTPException(404, f"会话文件不存在: {req.path}")
+
+    # 先读出被删会话的 saved_at，用于判断它是不是"当前会话"
+    data = W._session_summary(real) or {}
+    try:
+        real.unlink()
+    except OSError as e:
+        raise HTTPException(500, f"删除失败: {e}")
+
+    removed_latest = False
+    latest = W._session_summary()
+    if latest and latest.get("saved_at") and latest["saved_at"] == data.get("saved_at"):
+        try:
+            W.SESSION_JSON.unlink()
+            removed_latest = True
+        except OSError:
+            pass
+
+    return {
+        "status": "ok",
+        "deleted": real.name,
+        "removed_latest": removed_latest,
+        "sessions": api_sessions()["sessions"],
+    }
 
 
 @app.post("/api/sessions/restore")

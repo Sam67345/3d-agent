@@ -89,6 +89,18 @@ export const api = {
       body: JSON.stringify({ path }),
     }),
 
+  /** 删除一个归档会话 */
+  deleteSession: (path: string) =>
+    req<{
+      status: string;
+      deleted: string;
+      removed_latest: boolean;
+      sessions: SessionItem[];
+    }>("/api/sessions/delete", {
+      method: "POST",
+      body: JSON.stringify({ path }),
+    }),
+
   figures: () => req<{ figures: FigureItem[]; label: string }>("/api/figures"),
 
   addFolder: (folder: string) =>

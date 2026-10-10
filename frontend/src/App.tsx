@@ -152,6 +152,26 @@ export default function App() {
     }
   };
 
+  /** 删除归档会话：先确认，再调后端，成功后刷新列表 */
+  const removeSession = async (s: { title: string; path: string }) => {
+    if (busy) return;
+    if (!window.confirm(`确定删除会话「${s.title}」？\n删除后无法恢复。`)) return;
+    setBusy(true);
+    try {
+      const r = await api.deleteSession(s.path);
+      setSessions(r.sessions);
+      push(
+        "assistant",
+        `🗑 已删除会话「${s.title}」` +
+          (r.removed_latest ? "（它也是当前会话，已一并清除恢复点）" : ""),
+      );
+    } catch (e) {
+      push("assistant", `❌ 删除失败：${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const toggleView = async () => {
     const next = !showView;
     setShowView(next);
@@ -225,22 +245,35 @@ export default function App() {
                 </div>
               )}
               {sessions.map((s) => (
-                <button
+                <div
                   key={s.path}
-                  onClick={() => restore(s.path)}
-                  disabled={busy}
-                  className="mb-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-left transition hover:border-indigo-300 hover:bg-indigo-50/40 disabled:opacity-50"
+                  className="group mb-1 flex items-stretch gap-1 rounded-lg border border-slate-200 bg-white transition hover:border-indigo-300"
                 >
-                  <div className="truncate text-[12.5px] font-medium text-slate-800">
-                    {s.title}
-                  </div>
-                  <div className="mt-0.5 flex justify-between text-[11px] text-slate-400">
-                    <span>{s.saved_at}</span>
-                    <span>
-                      {s.n_slices} 切片 / {s.n_virtual} 虚拟
-                    </span>
-                  </div>
-                </button>
+                  <button
+                    onClick={() => restore(s.path)}
+                    disabled={busy}
+                    className="min-w-0 flex-1 rounded-lg px-3 py-2 text-left transition hover:bg-indigo-50/40 disabled:opacity-50"
+                  >
+                    <div className="truncate text-[12.5px] font-medium text-slate-800">
+                      {s.title}
+                    </div>
+                    <div className="mt-0.5 flex justify-between text-[11px] text-slate-400">
+                      <span>{s.saved_at}</span>
+                      <span>
+                        {s.n_slices} 切片 / {s.n_virtual} 虚拟
+                      </span>
+                    </div>
+                  </button>
+                  <button
+                    title="删除该会话"
+                    aria-label={`删除会话 ${s.title}`}
+                    onClick={() => removeSession(s)}
+                    disabled={busy}
+                    className="w-7 shrink-0 rounded-lg text-[13px] text-slate-300 transition hover:bg-red-50 hover:text-red-500 disabled:opacity-40"
+                  >
+                    ✕
+                  </button>
+                </div>
               ))}
             </div>
           </div>
