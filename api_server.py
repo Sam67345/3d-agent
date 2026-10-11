@@ -1,7 +1,7 @@
 """M13 API 服务层：把现有 Agent 能力暴露成 HTTP 接口，供 React 前端调用。
 
 设计原则（铁律：旧版一行不改）：
-- **薄封装**：直接 import web_app，复用它的 Agent 实例、面板/会话/图扫描/LLM 配置逻辑，
+- **薄封装**：复用 core_bootstrap 的 Agent 实例、面板/会话/图扫描/LLM 配置逻辑，
   不复制、不改写任何核心逻辑。web_app.py 顶部只是构建 UI，本模块不碰那些 UI 函数。
 - 只做三件事：HTTP 端点、路径安全校验、把同步长任务跑在线程池里（FastAPI 的同步端点
   本身就在线程池执行，所以直接 def 即可，不阻塞事件循环）。
@@ -21,7 +21,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 
-import web_app as W
+import core_bootstrap as W   # M16：内核已从 Gradio 版 web_app.py 抽出，桌面端不再依赖它
 
 app = FastAPI(title="SpatialZ 3D Agent API", version="M13")
 

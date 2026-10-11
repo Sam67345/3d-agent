@@ -99,7 +99,7 @@ def test_structural_error_reported():
 
 def test_planner_dependency_expansion():
     """Planner 产出的 visualize 计划在 handle 层自动补 make_dense。"""
-    from agent_cli import Agent
+    from agent.core import Agent  # M16: Agent 已从 agent_cli 搬入 agent 包
     agent = Agent(mock=True, verbose=False)
     # 手动构造：加载(快) → 可视化；验证 make_dense 自动插入
     agent.planner.llm.PLANS = {"直接可视化": [{"skill": "visualize_3d", "args": {}}]}

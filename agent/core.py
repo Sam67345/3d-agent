@@ -1,34 +1,18 @@
-"""Agent 主循环：Planner → Verifier → Executor(+Error Reflector)。
+"""Agent 主循环：Planner -> Verifier -> Executor(+Error Reflector)。
 
-CLI 入口（注意：不能叫 agent.py，会与 agent/ 包冲突）：
-  python agent_cli.py                 # 交互 REPL
-  python agent_cli.py "指令"          # 单条指令
-  python agent_cli.py --mock "指令"   # 无密钥测试（确定性 MockLLM）
+M16：从 agent_cli.py 搬入 agent 包。原先 Agent 类定义在 CLI 入口文件里，
+web_app / desktop_app 都从 agent_cli import Agent，导致 CLI 版本一旦归档
+整个桌面端就断链。搬进包内后，入口文件（已归档）与内核彻底解耦。
 """
 
-import sys
 from pathlib import Path
 
-# Windows GBK 控制台 / pythonw 无控制台环境下，emoji 打印会抛 UnicodeEncodeError。
-# 统一把 stdout/stderr 设为 errors='replace'；pythonw 下 stdout 为 None 则换空设备。
-import io, os
-
-if sys.stdout is None:
-    sys.stdout = open(os.devnull, "w", encoding="utf-8", errors="replace")
-if sys.stderr is None:
-    sys.stderr = open(os.devnull, "w", encoding="utf-8", errors="replace")
-for _s in (sys.stdout, sys.stderr):
-    if hasattr(_s, "reconfigure"):
-        _s.reconfigure(errors="replace")
-
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-
-from agent.executor import Executor
-from agent.llm import LLMClient, LLMConfigError, MockLLM, check_config
-from agent.planner import Planner
-from agent.registry import load_registry
-from agent.session import Session
-from agent.verifier import verify
+from .executor import Executor
+from .llm import LLMClient, LLMConfigError, MockLLM, check_config
+from .planner import Planner
+from .registry import load_registry
+from .session import Session
+from .verifier import verify
 
 
 class Agent:
@@ -150,67 +134,3 @@ class Agent:
         if not steps:
             return False, reply or "Planner 未产出可执行步骤（可能需要用户澄清）"
         return self.run_steps(steps, on_event=on_event)
-
-
-BANNER = """\
-=== SpatialZ 3D 插值 Agent（M4 MVP）===
-自然语言指令驱动：加载 / 概况 / 对齐 / 插值 / 可视化 / 验证 / 导出notebook
-输入 exit 退出
-"""
-
-
-def main():
-    import time
-    args = [a for a in sys.argv[1:] if not a.startswith("--")]
-    mock = "--mock" in sys.argv
-    resume = "--resume" in sys.argv
-
-    # M6.4：每次启动创建本会话专属输出目录（显式传路径仍优先于该默认值）
-    run_dir = Path("output") / time.strftime("run_%Y%m%d_%H%M%S")
-    run_dir.mkdir(parents=True, exist_ok=True)
-
-    try:
-        agent = Agent(mock=mock, run_dir=run_dir)
-    except LLMConfigError as e:
-        print(f"配置错误: {e}")
-        sys.exit(2)
-
-    if resume:
-        from agent.session import Session
-        pkl = Path("session/session.pkl")
-        if pkl.exists():
-            try:
-                agent.session = Session.load(pkl)
-                agent.executor.session = agent.session
-                if not getattr(agent.session, "run_dir", None):
-                    agent.session.run_dir = run_dir
-                print(f"会话已从 {pkl} 恢复（虚拟切片 "
-                      f"{len(agent.session.virtual_slices)} 层）")
-            except Exception as e:  # noqa: BLE001
-                print(f"会话恢复失败（开始新会话）: {e}")
-
-    print(BANNER)
-    print(f"本会话输出目录: {agent.session.run_dir}")
-    if args:
-        ok, msg = agent.handle(" ".join(args))
-        print(msg)
-        sys.exit(0 if ok else 1)
-
-    while True:
-        try:
-            text = input("你> ").strip()
-        except (EOFError, KeyboardInterrupt):
-            print("\n再见。")
-            break
-        if not text:
-            continue
-        if text.lower() in ("exit", "quit", "退出"):
-            path = agent.session.save()
-            print(f"会话已保存: {path}")
-            break
-        ok, msg = agent.handle(text)
-        print(msg)
-
-
-if __name__ == "__main__":
-    main()

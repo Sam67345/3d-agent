@@ -198,7 +198,7 @@ def serve_api_and_static():
     """
     import uvicorn
     from fastapi.staticfiles import StaticFiles
-    import api_server  # noqa: F401  复用它的 app（它自己 import web_app 起Agent）
+    import api_server  # noqa: F401  复用它的 app（它自己 import core_bootstrap 起 Agent）
 
     app = api_server.app
     # 追加在 API 路由之后，因此 /api/* 仍然优先匹配

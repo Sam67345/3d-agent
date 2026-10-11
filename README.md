@@ -41,19 +41,23 @@ Executor（调用技能：load_slices → interpolate_multiple → visualize_3d�
 | `validate` | 结果质量校验 |
 | `visualize_3d` | plotly 交互式 3D 可视化 |
 
-**三种使用形态**：
+**启动方式**：
 
 | 形态 | 启动方式 | 说明 |
 |---|---|---|
-| Gradio 桌面版 | `启动桌面端.bat` | 原型版，保底可用 |
-| React 网页版 | `启动React前端.bat` | FastAPI(7861) + React(3001)，浏览器访问 |
-| React 桌面版 | `启动React桌面端.bat` | pywebview 独立窗口，演示推荐 |
+| React 桌面端 | `启动.bat` | **唯一入口**：双击后弹出独立窗口（pywebview），无浏览器、无控制台 |
+
+界面为三栏布局：左栏（新建/历史会话、LLM 设置、切片信息）、中间聊天区、右栏（历史 3D 图下拉 + 交互式 3D 视图）。
+关闭窗口即结束服务，不残留后台进程。日志见 `output/desktop_react.log`。
+
+> M16 起仓库只保留这一套形态。CLI 版与 Gradio 版已移出仓库，本地留存于
+> `毕设/legacy/`（仅作历史参考，不参与运行）。
 
 ## 技术栈
 
 - **算法**：SpatialZ（三维插值）/ PASTE（最优传输切片对齐）/ scanpy（预处理）/ MENDER
 - **智能体**：Python，LLM 走 OpenAI 兼容接口（默认 DeepSeek，界面内可热切换配置）
-- **界面**：React + TypeScript + Vite（前端）/ FastAPI（服务层）/ Gradio（原型）/ pywebview（桌面壳）
+- **界面**：React + TypeScript + Vite（前端）/ FastAPI（服务层）/ pywebview（桌面壳）
 - **可视化**：plotly 交互式 3D
 
 ## 数据
@@ -77,8 +81,8 @@ python -m venv .venv
 REM 2. 配置 LLM（或启动后在界面「LLM 设置」里填）
 copy .env.example .env   REM 填入 MY_LLM_API_KEY / MY_LLM_BASE_URL / MY_LLM_MODEL
 
-REM 3. 任选一种形态启动
-启动React桌面端.bat
+REM 3. 启动（唯一入口，双击即可）
+启动.bat
 ```
 
 ## 参考文献
