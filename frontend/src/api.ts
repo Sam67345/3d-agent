@@ -17,6 +17,8 @@ export type ChatReply = {
   dropped?: unknown[];
   /** validate 等技能的中文解读（与 Gradio 版同源，由 _explain_validate 生成） */
   interpretations?: string[];
+  /** 后端 AI 自动生成的会话名（仅首次命名时返回） */
+  session_title?: string | null;
   /** validate 的结构化结果，前端可自行渲染 */
   validations?: Record<string, unknown>[];
 };
@@ -29,6 +31,9 @@ export type SessionItem = {
   path: string;
   label: string;
 };
+
+/** 聊天消息（会话历史里保存/还原的就是它） */
+export type ChatMessage = { role: "user" | "assistant"; content: string; ts?: string };
 
 export type FigureItem = { name: string; path: string; abs: string; mtime: number };
 
@@ -77,18 +82,30 @@ export const api = {
   panel: () => req<PanelData>("/api/panel"),
 
   sessions: () =>
-    req<{ sessions: SessionItem[]; latest_exists: boolean; latest_saved_at: string }>(
-      "/api/sessions",
-    ),
+    req<{
+      sessions: SessionItem[];
+      title?: string | null;
+      current_path?: string;
+      latest_exists: boolean;
+      latest_saved_at: string;
+    }>("/api/sessions"),
 
   newSession: () =>
-    req<{ status: string; archived: string | null; sessions: SessionItem[] }>(
-      "/api/sessions/new",
-      { method: "POST" },
-    ),
+    req<{
+      status: string;
+      archived: string | null;
+      sessions: SessionItem[];
+      messages?: ChatMessage[];
+    }>("/api/sessions/new", { method: "POST" }),
 
   restoreSession: (path: string) =>
-    req<{ status: string; reply: string; panel: string }>("/api/sessions/restore", {
+    req<{
+      status: string;
+      reply: string;
+      panel: string;
+      messages?: ChatMessage[];
+      session_title?: string | null;
+    }>("/api/sessions/restore", {
       method: "POST",
       body: JSON.stringify({ path }),
     }),
@@ -104,6 +121,13 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ path }),
     }),
+
+  /** 手动重命名会话 */
+  renameSession: (path: string, title: string) =>
+    req<{ status: string; reply: string; title: string; sessions: SessionItem[] }>(
+      "/api/sessions/rename",
+      { method: "POST", body: JSON.stringify({ path, title }) },
+    ),
 
   figures: () => req<{ figures: FigureItem[]; label: string }>("/api/figures"),
 

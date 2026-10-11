@@ -430,6 +430,13 @@ def _save_session(load_args=None, history=None):
             "virtual_slice_paths", []),
         "outputs": {k: str(v) for k, v in (s.outputs or {}).items()},
         "n_virtual": len(s.virtual_slices or []),
+        # 完整对话历史（前端切换会话时要用它还原聊天区）；保留旧的 chat_summary 字段
+        # 以兼容已有会话文件
+        "messages": [
+            {"role": str(m.get("role", "assistant")),
+             "content": str(m.get("content", "")),
+             "ts": str(m.get("ts", ""))}
+            for m in (history or []) if m.get("content")],
         "chat_summary": [
             {"role": m.get("role"), "content": str(m.get("content"))[:160]}
             for m in (history or [])[-6:]],
@@ -454,6 +461,69 @@ def _session_summary(path=None):
 
 
 # ---------- M11-4：会话列表 ----------
+
+_TITLE_MAX_LEN = 24
+
+
+def _fallback_title(text: str) -> str:
+    """没有 LLM 或 LLM 失败时的兜底标题：取首个指令的前若干字。"""
+    t = " ".join(str(text or "").split())
+    return t[:_TITLE_MAX_LEN] if t else "未命名会话"
+
+
+def auto_title(user_text: str, max_len: int = _TITLE_MAX_LEN) -> str:
+    """用 LLM 给会话起一个短标题（失败时退回截断）。
+
+    设计要点：
+    · 标题只描述"这次在做什么"，不描述文件路径（旧的截断式标题常出现
+      `插入"C:\\Users\\...` 这种毫无信息量的内容）
+    · LLM 不可用/超时/返回垃圾内容时，一律回退到截断，绝不让命名失败影响主流程
+    """
+    fallback = _fallback_title(user_text)
+    if _agent is None or getattr(_agent, "llm", None) is None:
+        return fallback
+    try:
+        prompt = (
+            "给下面这次空间转录组数据分析起一个**简短标题**。\n"
+            f"要求：不超过 {max_len} 个字；中文；只说这次在做什么"
+            "（如「插值DLPFC切片」「画3D脑图」），不要出现文件路径、"
+            "引号、句号或解释性文字；只输出标题本身。\n\n"
+            f"用户指令：{str(user_text)[:300]}"
+        )
+        raw = _agent.llm.chat([{"role": "user", "content": prompt}],
+                              temperature=0.2)
+        text = str(raw or "").strip().splitlines()[0] if str(raw or "").strip() else ""
+        text = text.strip().strip("「」\"'`。，,.!！?？:：")
+        if not text or len(text) > max_len + 8:
+            return fallback
+        return text[:max_len]
+    except Exception as e:  # noqa: BLE001
+        print(f"[session] AI 命名失败，用兜底标题: {type(e).__name__}: {e}")
+        return fallback
+
+
+def rename_session_file(path, title: str) -> tuple[bool, str]:
+    """重命名指定会话文件的 title 字段。返回 (ok, message)。"""
+    p = Path(path)
+    if not p.exists():
+        return False, f"会话文件不存在：{p.name}"
+    name = " ".join(str(title or "").split())
+    if not name:
+        return False, "标题不能为空"
+    if len(name) > 40:
+        return False, "标题过长（最多 40 字）"
+    try:
+        data = json.loads(p.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as e:
+        return False, f"会话文件读取失败：{e}"
+    data["title"] = name
+    try:
+        p.write_text(json.dumps(data, ensure_ascii=False, indent=2),
+                     encoding="utf-8")
+    except OSError as e:
+        return False, f"写入失败：{e}"
+    return True, f"已重命名为「{name}」"
+
 
 def _archive_current_session():
     """把当前 session_latest.json 归档进 output/sessions/，返回归档路径（无记录则 None）。"""

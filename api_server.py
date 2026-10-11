@@ -60,6 +60,11 @@ class SessionDeleteReq(BaseModel):
     path: str = Field(..., description="要删除的会话 json 文件路径")
 
 
+class SessionRenameReq(BaseModel):
+    path: str = Field(..., description="要重命名的会话 json 文件路径")
+    title: str = Field(..., description="新标题")
+
+
 class FolderReq(BaseModel):
     folder: str = Field(..., description="要加入扫描的文件夹路径")
 
@@ -116,6 +121,24 @@ def _agent_ready():
         raise HTTPException(503, W._agent_error or "Agent 未就绪（请先配置 LLM）")
 
 
+# 当前会话的完整对话历史（前端切换会话时用它/会话 json 里的 messages 还原聊天区）
+_chat_log: list[dict] = []
+
+
+def _log_message(role: str, content: str) -> None:
+    _chat_log.append({"role": role, "content": str(content),
+                       "ts": time.strftime("%H:%M:%S")})
+
+
+def _maybe_auto_title(user_text: str) -> str | None:
+    """首条用户指令时用 LLM 命名会话，返回新标题（已有标题则不动）。"""
+    if W._session_title or not user_text:
+        return None
+    title = W.auto_title(user_text)
+    W._session_title = title
+    return title
+
+
 def _run_steps(steps):
     """执行步骤并收集每步的结构化结果。
 
@@ -156,22 +179,32 @@ def api_chat(req: ChatReq):
     if not msg:
         raise HTTPException(400, "message 为空")
 
+    title = _maybe_auto_title(msg)
     steps, reply, dropped = W._agent.prepare_steps(msg)
     if not steps:
+        _log_message("user", msg)
+        _log_message("assistant", reply or "没有可执行步骤，请补充信息")
         return {"status": "clarify", "reply": reply or "没有可执行步骤，请补充信息",
-                "steps": [], "panel": W._panel_md()}
+                "steps": [], "panel": W._panel_md(), "session_title": title}
     if not req.skip_confirm:
+        _log_message("user", msg)
+        _log_message("assistant", reply or "")
         return {"status": "confirm", "reply": reply, "steps": steps,
-                "plan_card": W._plan_card(steps, reply), "panel": W._panel_md()}
+                "plan_card": W._plan_card(steps, reply), "panel": W._panel_md(),
+                "session_title": title}
 
     ok, message, interpretations, validations = _run_steps(steps)
+    _log_message("user", msg)
+    extra = ("\n\n" + "\n\n".join(interpretations)) if interpretations else ""
+    _log_message("assistant", f"{message}{extra}")
     if ok:
         W._save_session(load_args=next(
             (s.get("args") for s in steps if s["skill"] == "load_slices"), None),
-            history=[{"role": "user", "content": msg}])
+            history=list(_chat_log))
     return {"status": "done" if ok else "error", "reply": message,
             "steps": steps, "dropped": dropped, "panel": W._panel_md(),
-            "interpretations": interpretations, "validations": validations}
+            "interpretations": interpretations, "validations": validations,
+            "session_title": title}
 
 
 @app.post("/api/confirm")
@@ -179,9 +212,12 @@ def api_confirm(req: ConfirmReq):
     """用户点了【确认执行】：按已确认的步骤执行。"""
     _agent_ready()
     ok, message, interpretations, validations = _run_steps(req.steps)
+    extra = ("\n\n" + "\n\n".join(interpretations)) if interpretations else ""
+    _log_message("assistant", f"{message}{extra}")
     if ok:
         W._save_session(load_args=next(
-            (s.get("args") for s in req.steps if s["skill"] == "load_slices"), None))
+            (s.get("args") for s in req.steps if s["skill"] == "load_slices"), None),
+            history=list(_chat_log))
     return {"status": "done" if ok else "error", "reply": message,
             "panel": W._panel_md(),
             "interpretations": interpretations, "validations": validations}
@@ -224,6 +260,8 @@ def api_sessions():
             "label": name,
         })
     return {"sessions": out,
+            "title": W._session_title or (W._session_summary() or {}).get("title"),
+            "current_path": str(W.SESSION_JSON),
             "latest_exists": W.SESSION_JSON.exists(),
             "latest_saved_at": (W._session_summary() or {}).get("saved_at")}
 
@@ -233,6 +271,7 @@ def api_sessions_new():
     """新建会话：归档当前 session_latest.json，再重置会话状态（逻辑同 Gradio 版）。"""
     archived = W._archive_current_session()
     W._session_title = None
+    _chat_log.clear()                       # 新会话清空对话历史
     if W._agent is not None:
         from agent.session import Session
         run_dir = W.OUTPUT_DIR / time.strftime("run_%Y%m%d_%H%M%S")
@@ -243,6 +282,7 @@ def api_sessions_new():
     return {"status": "ok",
             "archived": Path(archived).name if archived else None,
             "sessions": api_sessions()["sessions"],
+            "messages": [],
             "panel": W._panel_md()}
 
 
@@ -303,6 +343,14 @@ def api_sessions_restore(req: SessionRestoreReq):
         raise HTTPException(404, "会话文件不存在或无法解析")
     ok, msg = W._restore_from(data)
     W._session_title = data.get("title")
+    # 还原对话历史：优先用 messages（完整），老会话文件回退到 chat_summary
+    global _chat_log
+    msgs = data.get("messages") or []
+    if not msgs:
+        msgs = [{"role": m.get("role", "assistant"),
+                 "content": m.get("content", ""), "ts": ""}
+                for m in (data.get("chat_summary") or [])]
+    _chat_log = [m for m in msgs if m.get("content")]
     if ok:
         try:
             W.SESSION_JSON.write_text(json.dumps(data, ensure_ascii=False, indent=2),
@@ -310,7 +358,44 @@ def api_sessions_restore(req: SessionRestoreReq):
         except OSError:
             pass
     return {"status": "ok" if ok else "error", "reply": msg,
-            "panel": W._panel_md()}
+            "panel": W._panel_md(),
+            "messages": list(_chat_log),
+            "session_title": W._session_title}
+
+
+@app.post("/api/sessions/rename")
+def api_sessions_rename(req: SessionRenameReq):
+    """手动重命名会话。"""
+    p = Path(req.path)
+    try:
+        real = p.resolve()
+        real.relative_to(W.OUTPUT_DIR.resolve())
+    except (OSError, ValueError):
+        raise HTTPException(403, "会话文件必须位于 output/ 目录内")
+
+    # 先记下"当前会话"指向的文件与标题，改名后再判断是否要同步
+    cur_title = (W._session_summary() or {}).get("title", "")
+    target = (W._session_summary(real) or {})
+    is_current = bool(target) and target.get("title") == cur_title
+
+    ok, msg = W.rename_session_file(real, req.title)
+    if not ok:
+        raise HTTPException(400, msg)
+
+    if is_current:
+        # 改的就是当前会话：同步内存标题与 session_latest.json
+        W._session_title = req.title.strip()
+        latest = W._session_summary()
+        if latest is not None:
+            latest["title"] = W._session_title
+            try:
+                W.SESSION_JSON.write_text(
+                    json.dumps(latest, ensure_ascii=False, indent=2),
+                    encoding="utf-8")
+            except OSError:
+                pass
+    return {"status": "ok", "reply": msg, "title": req.title.strip(),
+            "sessions": api_sessions()["sessions"]}
 
 
 # ---------------- 端点：图 ----------------

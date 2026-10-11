@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   api,
   figureSrc,
+  type ChatMessage,
   type ChatReply,
   type FigureItem,
   type PanelData,
@@ -14,7 +15,7 @@ import {
 } from "./api";
 import Markdown from "./components/Markdown";
 
-type Msg = { role: "user" | "assistant"; content: string };
+type Msg = ChatMessage;
 
 export default function App() {
   const [msgs, setMsgs] = useState<Msg[]>([]);
@@ -24,6 +25,8 @@ export default function App() {
   const [pending, setPending] = useState<Step[] | null>(null);
 
   const [sessions, setSessions] = useState<SessionItem[]>([]);
+  const [sessionTitle, setSessionTitle] = useState<string | null>(null);
+  const [currentPath, setCurrentPath] = useState<string>("");
   const [panel, setPanel] = useState<PanelData | null>(null);
   const [header, setHeader] = useState("");
 
@@ -48,6 +51,8 @@ export default function App() {
     try {
       const [s, p] = await Promise.all([api.sessions(), api.panel()]);
       setSessions(s.sessions);
+      setSessionTitle((cur) => s.title ?? cur);
+      if (s.current_path) setCurrentPath(s.current_path);
       setPanel(p);
     } catch {
       /* 后端未起时静默 */
@@ -85,6 +90,7 @@ export default function App() {
     setBusy(true);
     try {
       const r: ChatReply = await api.chat(text, skipConfirm);
+      if (r.session_title) setSessionTitle(r.session_title);
       if (r.status === "confirm" && r.steps?.length) {
         push("assistant", r.plan_card || r.reply);
         setPending(r.steps);
@@ -135,21 +141,54 @@ export default function App() {
       await api.newSession();
       setMsgs([]);
       setPending(null);
+      setSessionTitle(null);
       await refreshSide();
     } finally {
       setBusy(false);
     }
   };
 
+  /** 恢复会话：还原切片状态 + 对话历史 + 标题 */
   const restore = async (p: string) => {
     if (busy) return;
     setBusy(true);
     try {
       const r = await api.restoreSession(p);
+      // 先清空再还原历史消息，否则两个会话的消息会混在一起
+      setMsgs((r.messages || []).map((m) => ({ role: m.role, content: m.content })));
+      setSessionTitle(r.session_title ?? null);
+      setCurrentPath(p);
       push("assistant", r.status === "ok" ? `✅ ${r.reply}` : `❌ 恢复失败：${r.reply}`);
-      await refreshSide();
+      await Promise.all([refreshSide(), refreshFigures()]);
     } catch (e) {
       push("assistant", `❌ ${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  /** 手动重命名会话（initial 为预设标题，默认用原标题） */
+  const renameSession = async (
+    s: { title: string; path: string },
+    initial?: string,
+  ) => {
+    if (busy) return;
+    const next = window.prompt("给这个会话起个新名字：", initial ?? s.title);
+    if (next === null) return;                    // 点了取消
+    const title = next.trim();
+    if (!title) {
+      push("assistant", "⚠ 标题不能为空，已取消重命名。");
+      return;
+    }
+    if (title === s.title) return;
+    setBusy(true);
+    try {
+      const r = await api.renameSession(s.path, title);
+      setSessions(r.sessions);
+      setSessionTitle((cur) => (cur && cur === s.title ? r.title : cur));
+      push("assistant", `📝 ${r.reply}`);
+    } catch (e) {
+      push("assistant", `❌ 重命名失败：${e instanceof Error ? e.message : String(e)}`);
     } finally {
       setBusy(false);
     }
@@ -237,6 +276,35 @@ export default function App() {
             ＋ 新会话
           </button>
 
+          {/* 当前会话名（AI 自动命名，可点铅笔手动改） */}
+          <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5">
+            <span className="min-w-0 flex-1 truncate text-[12.5px] text-slate-600">
+              当前：{sessionTitle || "未命名会话"}
+            </span>
+            <button
+              title="重命名当前会话"
+              aria-label="重命名当前会话"
+              onClick={() => {
+                const next = window.prompt("给当前会话起个新名字：", sessionTitle || "");
+                if (next === null) return;
+                const title = next.trim();
+                if (!title) {
+                  push("assistant", "⚠ 标题不能为空，已取消重命名。");
+                  return;
+                }
+                if (currentPath) {
+                  renameSession({ title: sessionTitle || "", path: currentPath }, title);
+                } else {
+                  push("assistant", "⚠ 当前会话还没有归档文件，先执行一条指令再改名。");
+                }
+              }}
+              disabled={busy}
+              className="shrink-0 text-[12px] text-slate-400 transition hover:text-indigo-500 disabled:opacity-40"
+            >
+              ✎
+            </button>
+          </div>
+
           <div className="flex min-h-0 flex-1 flex-col">
             <div className="mb-1 text-[12px] font-medium text-slate-500">
               📂 历史会话（{sessions.length}）
@@ -268,11 +336,20 @@ export default function App() {
                     </div>
                   </button>
                   <button
+                    title="重命名该会话"
+                    aria-label={`重命名会话 ${s.title}`}
+                    onClick={() => renameSession(s)}
+                    disabled={busy}
+                    className="w-6 shrink-0 self-center rounded text-[12px] text-slate-300 transition hover:text-indigo-500 disabled:opacity-40"
+                  >
+                    ✎
+                  </button>
+                  <button
                     title="删除该会话"
                     aria-label={`删除会话 ${s.title}`}
                     onClick={() => removeSession(s)}
                     disabled={busy}
-                    className="w-7 shrink-0 rounded-lg text-[13px] text-slate-300 transition hover:bg-red-50 hover:text-red-500 disabled:opacity-40"
+                    className="w-7 shrink-0 self-center rounded-lg text-[13px] text-slate-300 transition hover:bg-red-50 hover:text-red-500 disabled:opacity-40"
                   >
                     ✕
                   </button>
