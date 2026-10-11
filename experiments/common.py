@@ -51,6 +51,27 @@ def add_spatialz_to_path() -> None:
         sys.path.insert(0, p)
 
 
+def shim_anndata_concatenate() -> str:
+    """运行时补丁：anndata 0.13 移除了 `AnnData.concatenate`（已被 ad.concat 取代）。
+
+    SpatialZ 源码两处用到它：
+      · Generate_multiple_spatialz：`AnnData.concatenate(*ads, batch_key=..., batch_categories=...)`（类级）
+      · synthesize_gene_expression / _fast：`reference_adatas[0].concatenate(...)`（实例级）
+    两者在新版 anndata 下都会 AttributeError。我们**不改源码文件**，
+    在实验脚本运行时补一个等价类方法，内部转成 ad.concat(label=/keys=)。
+    """
+    import anndata as ad
+    if hasattr(ad.AnnData, "concatenate"):
+        return "AnnData.concatenate 已存在，无需补丁"
+
+    def _concat(cls, *adatas, batch_key=None, batch_categories=None, **kwargs):
+        keys = list(batch_categories) if batch_categories is not None else None
+        return ad.concat(list(adatas), label=batch_key, keys=keys, **kwargs)
+
+    ad.AnnData.concatenate = classmethod(_concat)
+    return "AnnData.concatenate -> ad.concat 兼容补丁已启用"
+
+
 # ---------------- 指标 ----------------
 
 def per_cell_correlation(real: np.ndarray, syn: np.ndarray,
@@ -130,6 +151,53 @@ def morans_i_gene_wise(expr: np.ndarray, coords: np.ndarray, k: int = 6):
 def ensure_out_dir() -> Path:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     return OUT_DIR
+
+
+def gearys_c_gene_wise(expr: np.ndarray, coords: np.ndarray, k: int = 6):
+    """逐基因 Geary's C（空间自相关的"局部差异"度量）。
+
+    SpatialZ 论文 Fig.2e 用它与 Moran's I 并列做虚拟层 vs 真实层的空间格局评估。
+    权重构造与 morans_i_gene_wise 一致（kNN + 行归一化），保证两个指标可比。
+    """
+    from scipy import sparse as sp
+    from sklearn.neighbors import NearestNeighbors
+    expr = np.asarray(expr, dtype=np.float64)
+    n, g = expr.shape
+    nn = NearestNeighbors(n_neighbors=k + 1).fit(coords)
+    _, idx = nn.kneighbors(coords)
+    rows = np.repeat(np.arange(n), k + 1)
+    cols = idx.ravel()
+    W = sp.csr_matrix((np.ones(rows.shape[0]), (rows, cols)), shape=(n, n))
+    W.setdiag(0)
+    W.eliminate_zeros()
+    rs = np.asarray(W.sum(axis=1)).ravel()
+    rs[rs == 0] = 1.0
+    W = sp.diags(1.0 / rs) @ W          # 行归一化
+
+    z = expr - expr.mean(axis=0, keepdims=True)
+    W2 = (W @ W).tocsr()
+    out = np.empty(g)
+    for j in range(g):
+        zj = z[:, j]
+        denom = (zj ** 2).sum()
+        if denom <= 0:
+            out[j] = np.nan
+            continue
+        num = (zj @ (W2 @ zj)) - 2.0 * (W @ zj) @ zj + zj @ zj
+        out[j] = ((n - 1) / (2.0 * W.sum())) * float(num / denom)
+    return out
+
+
+def spearman_r(a, b) -> tuple:
+    """两列向量之间的 Spearman 相关与双侧 p 值（论文用双侧 Spearman 检验）。"""
+    from scipy.stats import spearmanr
+    a = np.asarray(a, dtype=float)
+    b = np.asarray(b, dtype=float)
+    ok = ~(np.isnan(a) | np.isnan(b))
+    if ok.sum() < 3:
+        return float("nan"), float("nan")
+    r, p = spearmanr(a[ok], b[ok])
+    return float(r), float(p)
 
 
 def save_json(name: str, payload: dict) -> Path:
